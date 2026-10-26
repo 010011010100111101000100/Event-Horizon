@@ -75,6 +75,11 @@ input[type=range]{accent-color:var(--ac2);padding:0}
 .card{font-size:22px;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--n3) 18%,transparent),transparent 70%),var(--glass)}
 main{scrollbar-color:var(--ac2) transparent}
 #hint{text-shadow:0 0 8px #000}
+
+.bar{height:12px;background:rgba(255,255,255,.1);margin:8px 0}.bar div{height:100%;width:0;background:linear-gradient(90deg,var(--ac),var(--n3));transition:width .6s}
+.heat{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;gap:3px;overflow:auto}.heat i{width:13px;height:13px;background:rgba(255,255,255,.08)}.heat i.on{background:var(--ac);box-shadow:0 0 6px var(--ac)}
+#emg{display:none;position:fixed;inset:0;z-index:20;background:#000;color:#ff5d6c;place-content:center;text-align:center;gap:10px}body.emg #emg{display:grid}
+body.emg #emg .stat{background:none;color:#ff5d6c}
 </style>
 </head>
 <body data-theme="cyan">
@@ -92,6 +97,7 @@ main{scrollbar-color:var(--ac2) transparent}
   <button class="btn" id="mus">Music: off</button>
   <input type="range" id="mvol" min="0" max="1" step="0.01" value="0.7" style="width:80px" aria-label="Music volume">
   <button class="btn" id="hudb">Focus HUD</button>
+  <button class="btn" id="emgb">Emergency thrusters</button>
   <button class="btn" id="palb">Search Ctrl+K</button>
 </header>
 <nav id="nav"></nav>
@@ -114,13 +120,13 @@ main{scrollbar-color:var(--ac2) transparent}
   <div class="split">
     <div class="panel">
       <h2>Pulsar deck</h2>
-      <div class="mono tag" id="due"></div>
+      <div class="mono tag" id="due"></div><button class="btn" id="tts" style="margin:6px 0">Read aloud</button>
       <div class="panel card" id="card" tabindex="0" role="button">No cards yet. Add one on the right.</div>
       <div class="row" style="margin-top:10px" id="grade">
         <button class="btn" data-q="1">Forgot</button><button class="btn" data-q="3">Hard</button><button class="btn" data-q="4">Good</button><button class="btn" data-q="5">Easy</button>
       </div>
     </div>
-    <div class="panel"><h2>Add card</h2><input id="cq" placeholder="Question"><textarea id="ca" rows="4" placeholder="Answer" style="margin:8px 0"></textarea><button class="btn" id="cadd">Save card</button><div id="clist" class="mono" style="margin-top:12px;font-size:12px"></div></div>
+    <div class="panel"><h2>Add card</h2><input id="cq" placeholder="Question"><textarea id="ca" rows="4" placeholder="Answer" style="margin:8px 0"></textarea><button class="btn" id="cadd">Save card</button><div class="row" style="margin-top:10px"><button class="btn" id="dexp">Export deck</button><label class="btn">Import deck<input type="file" id="dimp" accept=".json" hidden></label></div><div id="clist" class="mono" style="margin-top:12px;font-size:12px"></div></div>
   </div>
 </section>
 
@@ -131,6 +137,7 @@ main{scrollbar-color:var(--ac2) transparent}
     <div class="stat mono" id="clock">25:00</div>
     <div class="row" style="justify-content:center;margin-top:8px">
       <button class="btn" id="tgo">Start focus</button><button class="btn" id="trst">Reset</button>
+      <label class="tag"><input type="checkbox" id="zen" style="width:auto"> Zenith lockout</label>
       <label class="tag">Focus min <input id="tf" type="number" value="25" min="1" style="width:64px"></label>
       <label class="tag">Break min <input id="tb" type="number" value="5" min="1" style="width:64px"></label>
     </div>
@@ -162,9 +169,36 @@ main{scrollbar-color:var(--ac2) transparent}
     <div class="row"><input id="evn" placeholder="Test or deadline" style="width:240px"><input id="evd" type="date" style="width:170px"><button class="btn" id="eva">Add</button></div>
     <div id="evl" class="mono" style="margin-top:10px"></div></div>
 </section>
+
+<section class="view" id="v-stats">
+  <div class="grid">
+    <div class="panel"><h2>Black hole entropy</h2><canvas id="bh" width="200" height="200"></canvas><div class="tag">Grows when you leave the site or idle. Shrinks while you work.</div></div>
+    <div class="panel"><h2>Fuel cell stamina</h2><div class="bar"><div id="fuel"></div></div><div class="tag" id="fuelt"></div>
+      <h2 style="margin-top:14px">Orbit completion log</h2><pre class="mono tag" id="dbf" style="white-space:pre-wrap"></pre><button class="btn" id="dbx">Export mission debrief</button></div>
+  </div>
+  <div class="panel" style="margin-top:12px"><h2>Spectral velocity: focus minutes by hour</h2><canvas id="vel" width="480" height="145" style="width:100%;max-width:720px"></canvas></div>
+  <div class="panel" style="margin-top:12px"><h2>Subject heatmap: last 12 weeks</h2><div class="heat" id="heat"></div></div>
+</section>
+
+<section class="view" id="v-rank">
+  <div class="panel" style="max-width:560px"><h2>Flight rank</h2><div class="stat" id="rk"></div><div class="bar"><div id="rkb"></div></div><div class="tag" id="rkp"></div>
+    <h2 style="margin-top:16px">Daily space probe dispatch</h2><div id="qs" class="mono"></div><div class="tag">Probe badges earned: <span id="bdg"></span></div></div>
+</section>
+
+<section class="view" id="v-astro">
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+    <div class="panel"><h2>H-R diagram</h2><canvas id="hr" width="480" height="200" style="width:100%"></canvas><div class="tag" id="hri">Click a star to see its data and linked notes.</div></div>
+    <div class="panel"><h2>Spectral line scanner</h2><div class="row" id="spb"></div><canvas id="spc" width="480" height="100" style="width:100%;margin-top:8px"></canvas></div>
+    <div class="panel"><h2>Relativistic velocity</h2><input type="range" id="rv" min="0" max="0.999" step="0.001" value="0.5"><p class="mono tag" id="rvo"></p></div>
+    <div class="panel"><h2>Telescope field of view</h2><div class="row"><input id="ft" type="number" value="1200" title="Telescope focal length mm" style="width:46%"><input id="fe" type="number" value="25" title="Eyepiece focal length mm" style="width:46%"><input id="fa" type="number" value="52" title="Eyepiece apparent FOV deg" style="width:46%"><input id="fs" type="number" value="23.5" title="Sensor width mm" style="width:46%"></div><p class="tag">Focal length, eyepiece, apparent field, sensor width (mm or deg).</p><p class="mono tag" id="fo"></p></div>
+    <div class="panel"><h2>RA/Dec to Alt/Az</h2><div class="row"><input id="cra" type="number" value="6.75" title="RA hours" style="width:46%"><input id="cde" type="number" value="-16.7" title="Dec degrees" style="width:46%"><input id="cla" type="number" value="-41.3" title="Latitude degrees" style="width:46%"><input id="cls" type="number" value="8" title="Local sidereal time hours" style="width:46%"></div><p class="tag">RA h, Dec °, latitude °, local sidereal time h.</p><p class="mono tag" id="co"></p></div>
+    <div class="panel"><h2>Audio soundboard</h2><label class="tag">Cabin hum</label><input type="range" class="mx" value="0"><label class="tag">Solar wind rumble</label><input type="range" class="mx" value="0"><label class="tag">Cosmic rain</label><input type="range" class="mx" value="0"></div>
+  </div>
+</section>
 </main>
 </div>
 
+<div id="emg"><div class="tag">Emergency thrusters engaged</div><div class="stat mono" id="emgn"></div><div class="stat mono" id="emgc" style="font-size:54px"></div><div class="mono" id="emgt" style="font-size:28px"></div><button class="btn" id="emgx" style="margin-top:20px">Stand down</button></div>
 <div id="pal"><div class="box panel"><input id="pin" placeholder="Jump to a note, deck, or tool"><ul id="pul"></ul></div></div>
 
 <script>
@@ -175,15 +209,18 @@ try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 S=S||{notes:[{id:1,title:'Welcome aboard',tags:'start',body:'# Welcome\nThis is your first star. Edit it, tag it, and link it to others with shared tags.\n\nOrbital period: $T^2 \\propto a^3$',rev:1,last:Date.now()},
 {id:2,title:'Orbital mechanics',tags:'start,physics',body:'## Kepler\nEllipses, equal areas, $T^2\\propto a^3$.',rev:2,last:Date.now()}],
 cards:[],mins:0,days:[],events:[],nid:3,cid:1,theme:'cyan'};
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook']];
+S.hr=S.hr||Array(24).fill(0);S.log=S.log||[];S.ent=S.ent||0;S.cons=S.cons||0;S.badges=S.badges||0;
+let db;const rq=indexedDB.open('eh',1);rq.onupgradeneeded=()=>rq.result.createObjectStore('s');
+rq.onsuccess=()=>{db=rq.result;try{const r=db.transaction('s').objectStore('s').get('S');r.onsuccess=()=>{if(!localStorage.getItem(KEY)&&r.result){localStorage.setItem(KEY,JSON.stringify(r.result));location.reload()}}}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{db&&db.transaction('s','readwrite').objectStore('s').put(JSON.parse(JSON.stringify(S)),'S')}catch(e){}};
+const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook'],['stats','Mission metrics'],['rank','Pilot ranks'],['astro','Astro tools']];
 let cur='map',trail=[];
 
 $('#nav').innerHTML=VIEWS.map(v=>`<button data-v="${v[0]}">${v[1]}</button>`).join('');
-function go(v){cur=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id=='v-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
+function go(v){if(run&&$('#zen').checked&&v!='timer'){$('#tmode').textContent='Zenith lockout active until this warp cycle ends.';return}cur=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id=='v-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
  trail=trail.filter(t=>t!=v);trail.push(v);trail=trail.slice(-6);
  $('#crumbs').innerHTML=trail.map((t,i)=>`<b data-v="${t}">SECTOR-${(VIEWS.findIndex(x=>x[0]==t)+1)*7}.${t}</b>`).join(' > ');
- if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='map')sizeMap();if(v=='sand')resetSim();}
+ if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='stats')renderStats();if(v=='rank')renderRank();if(v=='map')sizeMap();if(v=='sand')resetSim();}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)go(b.dataset.v)});
 
 let ac,sfxOn=false,drone;
@@ -261,7 +298,7 @@ function renderCards(){const d=dueCards();curCard=d[0]||null;showA=false;$('#due
 $('#card').onclick=()=>{if(!curCard)return;showA=!showA;const el=$('#card');el.textContent=showA?curCard.a:curCard.q;el.classList.remove('scan');void el.offsetWidth;el.classList.add('scan');beep(900,.15);$('#grade').style.visibility=showA?'visible':'hidden'};
 $$('#grade button').forEach(b=>b.onclick=()=>{const q=+b.dataset.q,c=curCard;
  if(q<3){c.reps=0;c.int=1}else{c.int=c.reps==0?1:c.reps==1?6:Math.round(c.int*c.ef);c.reps++}
- c.ef=Math.max(1.3,c.ef+(.1-(5-q)*(.08+(5-q)*.02)));c.due=Date.now()+(q<3?6e4*10:c.int*864e5);save();beep(q>3?660:300);renderCards()});
+ c.ef=Math.max(1.3,c.ef+(.1-(5-q)*(.08+(5-q)*.02)));c.due=Date.now()+(q<3?6e4*10:c.int*864e5);Q().rev++;save();beep(q>3?660:300);renderCards()});
 $('#cadd').onclick=()=>{const q=$('#cq').value.trim(),a=$('#ca').value.trim();if(!q||!a)return;S.cards.push({id:S.cid++,q,a,ef:2.5,int:0,reps:0,due:Date.now()});$('#cq').value=$('#ca').value='';save();renderCards()};
 
 const oc=$('#orbit'),ox=oc.getContext('2d');let tl=1500,total=1500,run=null,brk=false;
@@ -273,7 +310,7 @@ function drawOrbit(){ox.clearRect(0,0,320,320);const p=1-tl/total,ang=p*Math.PI*
 function setPhase(b){brk=b;total=tl=(b?+$('#tb').value:+$('#tf').value)*60;theme(b?'gold':(S.pre||'cyan'));$('#tmode').textContent=b?'Solar flare rest protocol. Step away.':'Focus orbit in progress.'}
 $('#tgo').onclick=()=>{if(run){clearInterval(run);run=null;$('#tgo').textContent='Resume';return}
  if(!brk&&tl==total){S.pre=document.body.dataset.theme=='gold'?'cyan':document.body.dataset.theme;setPhase(false)}
- $('#tgo').textContent='Pause';run=setInterval(()=>{tl--;if(tl<=0){beep(1000,.4);if(!brk){S.mins+=+$('#tf').value;const d=new Date().toDateString();if(!S.days.includes(d))S.days.push(d);save()}setPhase(!brk)}drawOrbit()},1000)};
+ $('#tgo').textContent='Pause';run=setInterval(()=>{tl--;if(tl<=0){beep(1000,.4);if(brk){S.cons=Math.max(0,(S.cons||0)-30)}if(!brk){sessionDone(+$('#tf').value);S.mins+=+$('#tf').value;const d=new Date().toDateString();if(!S.days.includes(d))S.days.push(d);save()}setPhase(!brk)}drawOrbit()},1000)};
 $('#trst').onclick=()=>{clearInterval(run);run=null;$('#tgo').textContent='Start focus';theme(S.pre||S.theme);brk=false;total=tl=+$('#tf').value*60;$('#tmode').textContent='Ready for departure.';drawOrbit()};
 total=tl=1500;drawOrbit();
 
@@ -309,6 +346,45 @@ addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='
  else if($('#pal').classList.contains('on')){if(e.key=='Escape')pal(false);if(e.key=='ArrowDown'){sel=Math.min(sel+1,items.length-1);palRender()}if(e.key=='ArrowUp'){sel=Math.max(sel-1,0);palRender()}if(e.key=='Enter'&&items[sel]){pal(false);items[sel].f()}}
  else if(e.key=='Escape')document.body.classList.remove('hud')});
 
+const Q=()=>{const d=new Date().toDateString();if(!S.q||S.q.d!=d)S.q={d,orbits:0,rev:0,done:false};return S.q};
+function sessionDone(m){S.hr[new Date().getHours()]+=m;S.cons=(S.cons||0)+m;S.log.push({t:Date.now(),m,notes:S.notes.length,cards:S.cards.filter(c=>c.reps>=3).length});Q().orbits++;save()}
+let lastAct=Date.now();['mousemove','keydown','click','touchstart'].forEach(e=>addEventListener(e,()=>lastAct=Date.now()));
+addEventListener('visibilitychange',save);
+setInterval(()=>{if(run)return;const away=document.hidden||Date.now()-lastAct>12e4;S.ent=Math.max(0,S.ent+(away?1:-.3));if(cur=='stats')drawBH()},1000);
+function drawBH(){const c=$('#bh'),x=c.getContext('2d'),r=8+Math.min(S.ent/20,36);x.clearRect(0,0,200,200);const g=x.createRadialGradient(100,100,r,100,100,r*2.4);g.addColorStop(0,css('--n3'));g.addColorStop(1,'transparent');x.fillStyle=g;x.beginPath();x.arc(100,100,r*2.4,0,7);x.fill();x.fillStyle='#000';x.beginPath();x.arc(100,100,r,0,7);x.fill();x.strokeStyle=css('--ac');x.stroke()}
+function debrief(){const L=S.log,h=L.reduce((a,l)=>a+l.m,0)/60,m=S.cards.filter(c=>c.reps>=3).length;return`Warp cycles completed: ${L.length}\nFlight hours: ${h.toFixed(1)}\nNotes created per warp cycle: ${L.length?(S.notes.length/L.length).toFixed(2):0}\nCards mastered per flight hour: ${h?(m/h).toFixed(2):0}`}
+function renderStats(){drawBH();const c=$('#vel'),x=c.getContext('2d'),mx=Math.max(1,...S.hr),gr=x.createLinearGradient(0,0,480,0);x.clearRect(0,0,480,145);gr.addColorStop(0,'#4a6bff');gr.addColorStop(1,'#ff3b30');x.strokeStyle=gr;x.lineWidth=3;x.beginPath();S.hr.forEach((v,i)=>{const px=10+i*20,py=125-v/mx*105;i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();x.fillStyle=css('--dim');x.font='10px JetBrains Mono';[0,6,12,18,23].forEach(h=>x.fillText(h+'h',6+h*20,140));
+ const fuel=Math.max(0,100-S.cons/1.2);$('#fuel').style.width=fuel+'%';$('#fuelt').textContent=fuel<25?'Thrusters need refueling. Take a physical break.':Math.round(fuel)+'% fuel remaining';
+ let h='';const d=new Date();for(let i=83;i>=0;i--){const t=new Date(d);t.setDate(d.getDate()-i);h+=`<i class="${S.days.includes(t.toDateString())?'on':''}" title="${t.toDateString()}"></i>`}$('#heat').innerHTML=h;$('#dbf').textContent=debrief()}
+$('#dbx').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([debrief()],{type:'text/plain'}));a.download='mission-debrief.txt';a.click()};
+const RK=[[0,'Recruit'],[10,'Cadet'],[50,'Navigator'],[100,'Flight Lieutenant'],[200,'Station Commander']];
+function renderRank(){const h=S.mins/60;let i=0;RK.forEach((r,k)=>{if(h>=r[0])i=k});const n=RK[i+1];$('#rk').textContent=RK[i][1];$('#rkp').textContent=n?`${h.toFixed(1)} study hours. ${n[0]} hours to reach ${n[1]}.`:'Top rank reached.';$('#rkb').style.width=(n?(h-RK[i][0])/(n[0]-RK[i][0])*100:100)+'%';
+ const q=Q(),L=[['Complete 2 focus orbits',q.orbits>=2],['Review 15 cards',q.rev>=15]];$('#qs').innerHTML=L.map(l=>`<div>${l[1]?'[x]':'[ ]'} ${l[0]}</div>`).join('');if(L.every(l=>l[1])&&!q.done){q.done=true;S.badges++;save()}$('#bdg').textContent=S.badges}
+let emT;
+$('#emgb').onclick=()=>{document.body.classList.add('emg');emT=setInterval(emg,1000);emg()};
+$('#emgx').onclick=()=>{document.body.classList.remove('emg');clearInterval(emT)};
+function emg(){const e=S.events.filter(v=>new Date(v.d)>=new Date().setHours(0,0,0,0)).sort((a,b)=>a.d.localeCompare(b.d))[0];$('#emgt').textContent='Focus clock '+$('#clock').textContent;if(!e){$('#emgn').textContent='No deadlines scheduled. Add one in the logbook.';$('#emgc').textContent='';return}
+ const s=Math.max(0,Math.floor((new Date(e.d+'T23:59:59')-Date.now())/1e3)),p=n=>String(n).padStart(2,'0');$('#emgn').textContent=e.n;$('#emgc').textContent=`${Math.floor(s/86400)}d ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
+let chs=null;
+function mixInit(){ac=ac||new AudioContext();ac.resume();if(chs)return;const buf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+ chs=[['lowpass',140],['bandpass',420],['highpass',5200]].map(c=>{const o=ac.createBufferSource();o.buffer=buf;o.loop=true;const f=ac.createBiquadFilter();f.type=c[0];f.frequency.value=c[1];const g=ac.createGain();g.gain.value=0;o.connect(f).connect(g).connect(ac.destination);o.start();return g})}
+$$('.mx').forEach((el,i)=>el.oninput=()=>{mixInit();chs[i].gain.value=el.value/100*(i==2?.15:.6)});
+$('#tts').onclick=()=>{if(!curCard||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(showA?curCard.a:curCard.q);u.pitch=.5;u.rate=.88;speechSynthesis.cancel();speechSynthesis.speak(u)};
+$('#dexp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S.cards.map(c=>({q:c.q,a:c.a})))],{type:'application/json'}));a.download='pulsar-deck.json';a.click()};
+$('#dimp').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{JSON.parse(t).forEach(c=>c.q&&c.a&&S.cards.push({id:S.cid++,q:String(c.q),a:String(c.a),ef:2.5,int:0,reps:0,due:Date.now()}));save();renderCards()}catch(x){alert('That file is not a valid deck.')}})};
+const HR=[['Sun','G',5772,1,'main sequence'],['Sirius A','A',9940,25,'main sequence'],['Rigel','B',12100,120000,'blue supergiant'],['Betelgeuse','M',3600,100000,'red supergiant'],['Proxima Centauri','M',3042,.0017,'red dwarf'],['Sirius B','DA',25200,.056,'white dwarf'],['Arcturus','K',4286,170,'red giant'],['Vega','A',9602,40,'main sequence']];
+const hx=t=>20+(1-(Math.log10(t)-3.4)/1.3)*440,hy=l=>10+(6-Math.log10(l))/10*180;
+function drawHR(){const x=$('#hr').getContext('2d');x.clearRect(0,0,480,200);x.font='10px JetBrains Mono';HR.forEach(h=>{x.fillStyle=h[2]>10000?'#9bb7ff':h[2]>6000?'#fff6e0':h[2]>4500?'#ffd08a':'#ff8a6a';x.beginPath();x.arc(hx(h[2]),hy(h[3]),6,0,7);x.fill();x.fillStyle=css('--dim');x.fillText(h[0],hx(h[2])+8,hy(h[3])+3)})}
+$('#hr').onclick=e=>{const r=e.target.getBoundingClientRect(),px=(e.clientX-r.left)*480/r.width,py=(e.clientY-r.top)*200/r.height,h=HR.find(h=>Math.hypot(hx(h[2])-px,hy(h[3])-py)<14);if(!h)return;
+ const rel=S.notes.filter(n=>{const t=(n.title+n.body).toLowerCase();return t.includes(h[0].toLowerCase().split(' ')[0])||t.includes(h[4])}).map(n=>n.title);$('#hri').textContent=`${h[0]}: spectral type ${h[1]}, ${h[2]} K, ${h[3]} solar luminosities, ${h[4]}. Related notes: ${rel.join(', ')||'none yet'}.`};drawHR();
+const SP={H:[410,434,486,656],He:[447,502,587,668],Na:[589,590],Ca:[393,397,423,527],Fe:[430,438,527,544],O:[441,527,616,630]};
+function drawSp(k){const c=$('#spc'),x=c.getContext('2d'),g=x.createLinearGradient(0,0,480,0);for(let i=0;i<=10;i++)g.addColorStop(i/10,`hsl(${270-i*27},90%,50%)`);x.clearRect(0,0,480,100);x.fillStyle=g;x.fillRect(0,0,480,70);x.fillStyle='#000';SP[k].forEach(n=>x.fillRect((n-380)/320*480,0,3,70));x.fillStyle=css('--dim');x.font='11px JetBrains Mono';x.fillText(k+' absorption lines (nm): '+SP[k].join(', '),4,90)}
+$('#spb').innerHTML=Object.keys(SP).map(k=>`<button class="btn" data-sp="${k}">${k}</button>`).join('');$('#spb').onclick=e=>{const b=e.target.closest('[data-sp]');if(b)drawSp(b.dataset.sp)};drawSp('H');
+$('#rv').oninput=()=>{const v=+$('#rv').value,g=1/Math.sqrt(1-v*v);$('#rvo').textContent=`v = ${v}c, γ = ${g.toFixed(3)}. One second on the ship is ${g.toFixed(3)} s on Earth. A 100 m ship measures ${(100/g).toFixed(1)} m.`};$('#rv').oninput();
+function fov(){const f=+$('#ft').value,e=+$('#fe').value,a=+$('#fa').value,w=+$('#fs').value,m=f/e;$('#fo').textContent=`Magnification ${m.toFixed(1)}x, true field ${(a/m).toFixed(2)}°, sensor field ${(2*Math.atan(w/2/f)*180/Math.PI).toFixed(2)}°`}
+['ft','fe','fa','fs'].forEach(i=>$('#'+i).oninput=fov);fov();
+function coord(){const ra=+$('#cra').value*Math.PI/12,de=+$('#cde').value*Math.PI/180,la=+$('#cla').value*Math.PI/180,H=+$('#cls').value*Math.PI/12-ra,al=Math.asin(Math.sin(de)*Math.sin(la)+Math.cos(de)*Math.cos(la)*Math.cos(H)),az=Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(la)-Math.tan(de)*Math.cos(la))+Math.PI;$('#co').textContent=`Altitude ${(al*180/Math.PI).toFixed(2)}°, azimuth ${(az*180/Math.PI%360).toFixed(2)}°`}
+['cra','cde','cla','cls'].forEach(i=>$('#'+i).oninput=coord);coord();
 go('map');
 </script>
 </body>
