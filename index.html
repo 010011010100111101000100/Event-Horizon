@@ -80,9 +80,24 @@ main{scrollbar-color:var(--ac2) transparent}
 .heat{display:grid;grid-template-rows:repeat(7,13px);grid-auto-flow:column;gap:3px;overflow:auto}.heat i{width:13px;height:13px;background:rgba(255,255,255,.08)}.heat i.on{background:var(--ac);box-shadow:0 0 6px var(--ac)}
 #emg{display:none;position:fixed;inset:0;z-index:20;background:#000;color:#ff5d6c;place-content:center;text-align:center;gap:10px}body.emg #emg{display:grid}
 body.emg #emg .stat{background:none;color:#ff5d6c}
+
+nav{overflow-y:auto}
+#cli{display:none;position:fixed;left:0;right:0;top:0;z-index:15;padding:10px}#cli.on{display:block}
+.code{position:relative;border:1px solid var(--ac);box-shadow:0 0 12px color-mix(in srgb,var(--ac) 50%,transparent);padding:10px;white-space:pre;overflow:auto;margin:6px 0}.code u{text-decoration:none;color:var(--n3)}.code i{color:var(--dim);font-style:normal}.cp{position:absolute;right:4px;top:4px;padding:2px 8px;font-size:11px}
+main.sp{display:grid;grid-template-columns:1fr 1fr;gap:12px}main.sp .view.on2{display:block}
+
+#load{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-content:center;justify-items:center;gap:14px;transition:opacity .7s}#load.out{opacity:0;pointer-events:none}
+.orb{position:relative;width:120px;height:120px}.orb i{position:absolute;inset:0;border:2px solid var(--ac);border-radius:50%;border-top-color:transparent;animation:sp 2s linear infinite}
+.orb i:nth-child(2){inset:14px;border-color:var(--ac2);border-top-color:transparent;animation-duration:1.4s;animation-direction:reverse}
+.orb i:nth-child(3){inset:36px;background:#000;border-color:var(--n3);box-shadow:0 0 30px var(--n3);animation:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+.keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.keys .btn{text-align:center;padding:10px 4px}
+#stabs .btn.on{border-color:var(--ac);color:var(--ac);box-shadow:0 0 12px color-mix(in srgb,var(--ac) 40%,transparent)}
 </style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/nerdamer.core.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Algebra.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Calculus.js"></script>
 </head>
 <body data-theme="cyan">
+<div id="load"><div class="orb"><i></i><i></i><i></i></div><h1>Event Horizon</h1><div class="tag mono" id="ldt">Powering up</div><div class="bar" style="width:220px"><div id="ldb"></div></div></div>
 <canvas id="neb"></canvas>
 <canvas id="sky"></canvas>
 <button class="btn" id="hudx">Exit focus HUD</button>
@@ -105,6 +120,7 @@ body.emg #emg .stat{background:none;color:#ff5d6c}
 <section class="view" id="v-map"><canvas id="map"></canvas><div id="hint">Click a star to open the note. Brighter stars are notes you review often. Matching tags draw constellation lines.</div></section>
 
 <section class="view" id="v-notes">
+  <div id="stabs" class="row" style="margin-bottom:10px"></div>
   <div class="row" style="margin-bottom:10px">
     <select id="nsel" style="width:200px"></select>
     <button class="btn" id="nnew">New note</button><button class="btn" id="ndel">Delete</button><button class="btn" id="nexp">Export .md</button>
@@ -137,6 +153,7 @@ body.emg #emg .stat{background:none;color:#ff5d6c}
     <div class="stat mono" id="clock">25:00</div>
     <div class="row" style="justify-content:center;margin-top:8px">
       <button class="btn" id="tgo">Start focus</button><button class="btn" id="trst">Reset</button>
+      <label class="tag"><input type="checkbox" id="refl" style="width:auto"> Reflection prompt</label>
       <label class="tag"><input type="checkbox" id="zen" style="width:auto"> Zenith lockout</label>
       <label class="tag">Focus min <input id="tf" type="number" value="25" min="1" style="width:64px"></label>
       <label class="tag">Break min <input id="tb" type="number" value="5" min="1" style="width:64px"></label>
@@ -182,7 +199,7 @@ body.emg #emg .stat{background:none;color:#ff5d6c}
 
 <section class="view" id="v-rank">
   <div class="panel" style="max-width:560px"><h2>Flight rank</h2><div class="stat" id="rk"></div><div class="bar"><div id="rkb"></div></div><div class="tag" id="rkp"></div>
-    <h2 style="margin-top:16px">Daily space probe dispatch</h2><div id="qs" class="mono"></div><div class="tag">Probe badges earned: <span id="bdg"></span></div></div>
+    <h2 style="margin-top:16px">Daily space probe dispatch</h2><div id="qs" class="mono"></div><div class="tag">Probe badges earned: <span id="bdg"></span></div><h2 style="margin-top:16px">Targeted maintenance flight</h2><div id="tm" class="mono tag"></div></div>
 </section>
 
 <section class="view" id="v-astro">
@@ -192,13 +209,50 @@ body.emg #emg .stat{background:none;color:#ff5d6c}
     <div class="panel"><h2>Relativistic velocity</h2><input type="range" id="rv" min="0" max="0.999" step="0.001" value="0.5"><p class="mono tag" id="rvo"></p></div>
     <div class="panel"><h2>Telescope field of view</h2><div class="row"><input id="ft" type="number" value="1200" title="Telescope focal length mm" style="width:46%"><input id="fe" type="number" value="25" title="Eyepiece focal length mm" style="width:46%"><input id="fa" type="number" value="52" title="Eyepiece apparent FOV deg" style="width:46%"><input id="fs" type="number" value="23.5" title="Sensor width mm" style="width:46%"></div><p class="tag">Focal length, eyepiece, apparent field, sensor width (mm or deg).</p><p class="mono tag" id="fo"></p></div>
     <div class="panel"><h2>RA/Dec to Alt/Az</h2><div class="row"><input id="cra" type="number" value="6.75" title="RA hours" style="width:46%"><input id="cde" type="number" value="-16.7" title="Dec degrees" style="width:46%"><input id="cla" type="number" value="-41.3" title="Latitude degrees" style="width:46%"><input id="cls" type="number" value="8" title="Local sidereal time hours" style="width:46%"></div><p class="tag">RA h, Dec °, latitude °, local sidereal time h.</p><p class="mono tag" id="co"></p></div>
-    <div class="panel"><h2>Audio soundboard</h2><label class="tag">Cabin hum</label><input type="range" class="mx" value="0"><label class="tag">Solar wind rumble</label><input type="range" class="mx" value="0"><label class="tag">Cosmic rain</label><input type="range" class="mx" value="0"></div>
+    <div class="panel"><h2>Audio soundboard</h2><label class="tag">Cabin hum</label><input type="range" class="mx" value="0"><label class="tag">Solar wind rumble</label><input type="range" class="mx" value="0"><label class="tag">Cosmic rain</label><input type="range" class="mx" value="0"><label class="tag">Radio static</label><input type="range" class="mx" value="0"></div>
   </div>
 </section>
+
+<section class="view" id="v-live"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+ <div class="panel"><h2>ISS tracker</h2><canvas id="issc" width="360" height="180" style="width:100%"></canvas><div class="tag" id="issi"></div><div class="tag" id="issp"></div><button class="btn" id="loc" style="margin-top:6px">Set my location for pass alerts</button></div>
+ <div class="panel"><h2>Space weather (NOAA SWPC)</h2><div class="stat" id="wxw">...</div><div class="tag">Solar wind speed</div><div class="mono" id="wxk"></div><div class="mono" id="wxf"></div></div>
+ <div class="panel"><h2>Near-Earth asteroid radar</h2><canvas id="neoc" width="320" height="320" style="width:100%;max-width:320px"></canvas><div class="tag" id="neoi">Rings mark 1, 5, 10 and 20 lunar distances.</div></div>
+ <div class="panel"><h2>NASA picture of the day</h2><div id="apod" class="tag">Loading.</div></div>
+</div></section>
+
+<section class="view" id="v-math"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+ <div class="panel"><h2>Symbolic calculus</h2><input id="ce" value="x^3*sin(x)"><div class="row" style="margin:8px 0"><button class="btn" id="cd">Differentiate</button><button class="btn" id="ci">Integrate</button></div><div id="cr"></div></div>
+ <div class="panel"><h2>Matrix, eigenvectors and phase portrait</h2><div class="row"><input id="ma" type="number" value="1" step="0.1" style="width:22%"><input id="mb" type="number" value="1" step="0.1" style="width:22%"><input id="mc" type="number" value="-2" step="0.1" style="width:22%"><input id="md" type="number" value="-1" step="0.1" style="width:22%"></div><canvas id="mcv" width="300" height="300" style="width:48%"></canvas><canvas id="pcv" width="300" height="300" style="width:48%"></canvas><p class="tag" id="mo"></p></div>
+ <div class="panel"><h2>Grapher</h2><div class="row"><input id="ge" value="sin(x)*x" style="width:60%"><select id="gm" style="width:35%"><option value="cart">y = f(x)</option><option value="pol">r = f(t)</option></select></div><canvas id="gcv" width="300" height="300" style="width:100%;max-width:300px"></canvas><div class="tag" id="gerr"></div></div>
+ <div class="panel"><h2>Error analysis</h2><input id="er" value="9.78, 9.81, 9.83, 9.79, 9.80"><p class="mono tag" id="ero"></p></div>
+</div></section>
+
+<section class="view" id="v-lab"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+ <div class="panel"><h2>N-body simulator</h2><canvas id="nbc" width="300" height="300" style="width:100%;max-width:300px"></canvas><div class="row"><input id="nbm" type="number" value="5" style="width:80px"><button class="btn" id="nbr">Reset</button></div><div class="tag">Click to add a mass.</div></div>
+ <div class="panel"><h2>Lagrange points</h2><input type="range" id="lmu" min="0.01" max="0.45" step="0.01" value="0.1"><canvas id="lcv" width="300" height="200" style="width:100%"></canvas></div>
+ <div class="panel"><h2>Rocket delta-v</h2><div class="row"><input id="dis" type="number" value="320" title="Isp seconds" style="width:30%"><input id="dm0" type="number" value="5000" title="Initial mass kg" style="width:30%"><input id="dmf" type="number" value="1500" title="Final mass kg" style="width:30%"></div><p class="tag">Isp s, start mass kg, end mass kg.</p><p class="mono" id="dvo"></p></div>
+ <div class="panel"><h2>Relativistic Doppler</h2><input type="range" id="db" min="-0.9" max="0.9" step="0.01" value="0"><div id="dsw" style="height:30px"></div><p class="mono tag" id="dvt"></p></div>
+</div></section>
+
+<section class="view" id="v-code"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+ <div class="panel"><h2>Python sandbox</h2><textarea id="pyc" rows="9">import math
+print(math.sqrt(2))</textarea><div class="row" style="margin:8px 0"><button class="btn" id="pyr">Run</button><button class="btn" id="pys">Save to vault</button></div><pre class="mono tag" id="pyo" style="white-space:pre-wrap"></pre></div>
+ <div class="panel"><h2>Snippet vault</h2><div id="vlt"></div></div>
+</div></section>
+
+<section class="view" id="v-cfg"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+ <div class="panel"><h2>Custom CSS engine</h2><textarea id="csst" rows="6" placeholder=":root{--ac:#ff9ad5;--ac2:#9a8cff}"></textarea></div>
+ <div class="panel"><h2>Station systems</h2><div class="row"><label class="tag">Split with <select id="spl"></select></label><label class="tag">Binaural <select id="bin"><option value="0">Off</option><option value="10">Alpha 10 Hz</option><option value="6">Theta 6 Hz</option></select></label></div>
+  <div class="row" style="margin-top:10px"><button class="btn" id="voice">Voice: off</button><label class="tag"><input type="checkbox" id="lockd" style="width:auto"> Distraction lockdown</label></div>
+  <div class="row" style="margin-top:10px"><button class="btn" id="jexp">Export station JSON</button><label class="btn">Import station<input type="file" id="jimp" accept=".json" hidden></label><button class="btn" id="prn">Print current note</button></div></div>
+ <div class="panel"><h2>Keyboard shortcuts</h2><div class="mono tag">Ctrl/Cmd+K  command palette<br>~  terminal CLI<br>Esc  close overlays and leave HUD<br>Click card  flip<br>CLI: orbit focus 25, node create "Physics", open stats, theme red</div></div>
+</div></section>
+<section class="view" id="v-calc"><div class="panel" style="max-width:440px"><h2>Scientific calculator</h2><input id="cx" class="mono" placeholder="sin(30)+2^3, logb(8,2), 5!" style="font-size:18px"><div class="stat mono" id="cr2">= 0</div><div class="tag mono" id="cb"></div><div class="row" style="margin:8px 0"><button class="btn" id="cdeg"></button></div><div class="keys" id="keys"></div><div class="mono tag" id="chs" style="margin-top:10px"></div></div></section>
 </main>
 </div>
 
 <div id="emg"><div class="tag">Emergency thrusters engaged</div><div class="stat mono" id="emgn"></div><div class="stat mono" id="emgc" style="font-size:54px"></div><div class="mono" id="emgt" style="font-size:28px"></div><button class="btn" id="emgx" style="margin-top:20px">Stand down</button></div>
+<div id="cli"><div class="panel"><pre id="cout" class="mono tag"></pre><input id="cin" placeholder="help"></div></div>
 <div id="pal"><div class="box panel"><input id="pin" placeholder="Jump to a note, deck, or tool"><ul id="pul"></ul></div></div>
 
 <script>
@@ -213,14 +267,14 @@ S.hr=S.hr||Array(24).fill(0);S.log=S.log||[];S.ent=S.ent||0;S.cons=S.cons||0;S.b
 let db;const rq=indexedDB.open('eh',1);rq.onupgradeneeded=()=>rq.result.createObjectStore('s');
 rq.onsuccess=()=>{db=rq.result;try{const r=db.transaction('s').objectStore('s').get('S');r.onsuccess=()=>{if(!localStorage.getItem(KEY)&&r.result){localStorage.setItem(KEY,JSON.stringify(r.result));location.reload()}}}catch(e){}};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{db&&db.transaction('s','readwrite').objectStore('s').put(JSON.parse(JSON.stringify(S)),'S')}catch(e){}};
-const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook'],['stats','Mission metrics'],['rank','Pilot ranks'],['astro','Astro tools']];
+const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook'],['stats','Mission metrics'],['rank','Pilot ranks'],['astro','Astro tools'],['live','Deep space feed'],['math','Math engine'],['lab','Orbital lab'],['code','Code lab'],['cfg','Station config'],['calc','Calculator']];
 let cur='map',trail=[];
 
 $('#nav').innerHTML=VIEWS.map(v=>`<button data-v="${v[0]}">${v[1]}</button>`).join('');
-function go(v){if(run&&$('#zen').checked&&v!='timer'){$('#tmode').textContent='Zenith lockout active until this warp cycle ends.';return}cur=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id=='v-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
+function go(v){if(run&&$('#zen').checked&&v!='timer'){$('#tmode').textContent='Zenith lockout active until this warp cycle ends.';return}cur=v;S.view=v;$$('.view').forEach(e=>{e.classList.toggle('on',e.id=='v-'+v);e.classList.toggle('on2',!!S.split&&S.split!=v&&e.id=='v-'+S.split)});$('main').classList.toggle('sp',!!S.split&&S.split!=v);$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
  trail=trail.filter(t=>t!=v);trail.push(v);trail=trail.slice(-6);
  $('#crumbs').innerHTML=trail.map((t,i)=>`<b data-v="${t}">SECTOR-${(VIEWS.findIndex(x=>x[0]==t)+1)*7}.${t}</b>`).join(' > ');
- if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='stats')renderStats();if(v=='rank')renderRank();if(v=='map')sizeMap();if(v=='sand')resetSim();}
+ if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='stats')renderStats();if(v=='rank'){renderRank();renderTM()}if(v=='math'){mat();graph()}if(v=='lab'){lag();dop();dvc()}if(v=='code')vaultR();if(v=='live')liveInit();if(v=='map')sizeMap();if(v=='sand')resetSim();}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)go(b.dataset.v)});
 
 let ac,sfxOn=false,drone;
@@ -267,23 +321,23 @@ addEventListener('resize',()=>{if(cur=='map')sizeMap()});
 function mastery(n){const age=(Date.now()-n.last)/864e5;return Math.max(.15,Math.min(1,(n.rev/8)*Math.exp(-age/30)+.15))}
 function layout(){const W=map.width,H=map.height;nodes=S.notes.map((n,i)=>{const a=i*2.4,r=40+Math.sqrt(i+1)*Math.min(W,H)*.12;return{n,x:W/2+Math.cos(a)*r,y:H/2+Math.sin(a)*r*.75}})}
 (function mapLoop(){if(cur=='map'&&map.width){if(nodes.length!=S.notes.length)layout();mc.clearRect(0,0,map.width,map.height);
- const tags={};nodes.forEach(o=>o.n.tags.split(',').map(t=>t.trim()).filter(Boolean).forEach(t=>(tags[t]=tags[t]||[]).push(o)));
+ const tags={};nodes.forEach(o=>(o.n.tags+','+(o.n.subj||'General')).split(',').map(t=>t.trim()).filter(Boolean).forEach(t=>(tags[t]=tags[t]||[]).push(o)));
  const pal=['#b58cff','#ff7ad9','#7cf0ff','#ffc04d','#7cff9e'];Object.keys(tags).forEach((t,i)=>{const g=tags[t];const cx=g.reduce((a,o)=>a+o.x,0)/g.length,cy=g.reduce((a,o)=>a+o.y,0)/g.length;const gr=mc.createRadialGradient(cx,cy,0,cx,cy,110);gr.addColorStop(0,pal[i%5]+'33');gr.addColorStop(1,'transparent');mc.fillStyle=gr;mc.fillRect(cx-110,cy-110,220,220);
   mc.strokeStyle=css('--ac');mc.globalAlpha=.45;for(let a=0;a<g.length;a++)for(let b=a+1;b<g.length;b++){mc.beginPath();mc.moveTo(g[a].x,g[a].y);mc.lineTo(g[b].x,g[b].y);mc.stroke()}mc.globalAlpha=1;mc.fillStyle=pal[i%5];mc.font='11px JetBrains Mono';mc.fillText('#'+t,cx-20,cy-90)});
  nodes.forEach(o=>{const m=mastery(o.n),r=3+m*10;mc.shadowColor=css('--ac');mc.shadowBlur=8+m*24;mc.fillStyle=css('--fg');mc.globalAlpha=.35+m*.65;mc.beginPath();mc.arc(o.x,o.y,r,0,7);mc.fill();mc.shadowBlur=0;mc.globalAlpha=1;mc.font='12px Space Grotesk';mc.fillText(o.n.title,o.x+r+4,o.y+4)})}
  requestAnimationFrame(mapLoop)})();
 map.onclick=e=>{const r=map.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;const h=nodes.find(o=>Math.hypot(o.x-x,o.y-y)<18);if(h){h.n.rev++;h.n.last=Date.now();save();open_(h.n.id)}};
 
-let nid=S.notes[0]?.id;
+let nid=S.sel||S.notes[0]?.id;
 const note=()=>S.notes.find(n=>n.id==nid);
-function open_(id){nid=id;go('notes')}
-function md(t){let h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function open_(id){nid=id;const n=S.notes.find(n=>n.id==id);if(n)S.subj=n.subj||'General';go('notes')}
+function md0(t){let h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
  const k=(s,d)=>{try{return window.katex?katex.renderToString(s,{displayMode:d,throwOnError:false}):s}catch(e){return s}};
  h=h.replace(/\$\$([\s\S]+?)\$\$/g,(_,s)=>k(s,true)).replace(/\$([^$\n]+)\$/g,(_,s)=>k(s,false));
  return h.replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\n/g,'<br>')}
-function renderNotes(){$('#nsel').innerHTML=S.notes.map(n=>`<option value="${n.id}" ${n.id==nid?'selected':''}>${n.title||'Untitled'}</option>`).join('');const n=note();if(!n)return;$('#ntitle').value=n.title;$('#ntags').value=n.tags;$('#nbody').value=n.body;$('#prev').innerHTML=md(n.body)}
+function renderNotes(){fixSubj();tabsR();$('#nsel').innerHTML=subjNotes().map(n=>`<option value="${n.id}" ${n.id==nid?'selected':''}>${n.title||'Untitled'}</option>`).join('');const n=note();if(!n)return;$('#ntitle').value=n.title;$('#ntags').value=n.tags;$('#nbody').value=n.body;$('#prev').innerHTML=md(n.body)}
 $('#nsel').onchange=e=>{nid=+e.target.value;renderNotes()};
-$('#nnew').onclick=()=>{S.notes.push({id:S.nid,title:'New note',tags:'',body:'',rev:0,last:Date.now()});nid=S.nid++;save();renderNotes()};
+$('#nnew').onclick=()=>{S.notes.push({id:S.nid,title:'New note',tags:'',body:'',rev:0,last:Date.now(),subj:S.subj});nid=S.nid++;save();renderNotes()};
 $('#ndel').onclick=()=>{if(S.notes.length>1&&confirm('Delete this note?')){S.notes=S.notes.filter(n=>n.id!=nid);nid=S.notes[0].id;save();renderNotes()}};
 ['ntitle','ntags','nbody'].forEach(i=>$('#'+i).oninput=()=>{const n=note();n.title=$('#ntitle').value;n.tags=$('#ntags').value;n.body=$('#nbody').value;n.last=Date.now();$('#prev').innerHTML=md(n.body);save();nodes=[]});
 $('#nexp').onclick=()=>{const n=note(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([`# ${n.title}\n\n${n.body}`],{type:'text/markdown'}));a.download=(n.title||'note')+'.md';a.click()};
@@ -347,7 +401,7 @@ addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='
  else if(e.key=='Escape')document.body.classList.remove('hud')});
 
 const Q=()=>{const d=new Date().toDateString();if(!S.q||S.q.d!=d)S.q={d,orbits:0,rev:0,done:false};return S.q};
-function sessionDone(m){S.hr[new Date().getHours()]+=m;S.cons=(S.cons||0)+m;S.log.push({t:Date.now(),m,notes:S.notes.length,cards:S.cards.filter(c=>c.reps>=3).length});Q().orbits++;save()}
+function sessionDone(m){S.hr[new Date().getHours()]+=m;S.cons=(S.cons||0)+m;S.log.push({t:Date.now(),m,notes:S.notes.length,cards:S.cards.filter(c=>c.reps>=3).length});Q().orbits++;save();if($('#refl').checked)setTimeout(()=>{const r=prompt('Focus orbit complete. What concept did you lock in, or what blocker did you hit?');if(r){S.refl=S.refl||[];S.refl.push({t:Date.now(),r});save()}},400)}
 let lastAct=Date.now();['mousemove','keydown','click','touchstart'].forEach(e=>addEventListener(e,()=>lastAct=Date.now()));
 addEventListener('visibilitychange',save);
 setInterval(()=>{if(run)return;const away=document.hidden||Date.now()-lastAct>12e4;S.ent=Math.max(0,S.ent+(away?1:-.3));if(cur=='stats')drawBH()},1000);
@@ -367,8 +421,8 @@ function emg(){const e=S.events.filter(v=>new Date(v.d)>=new Date().setHours(0,0
  const s=Math.max(0,Math.floor((new Date(e.d+'T23:59:59')-Date.now())/1e3)),p=n=>String(n).padStart(2,'0');$('#emgn').textContent=e.n;$('#emgc').textContent=`${Math.floor(s/86400)}d ${p(Math.floor(s%86400/3600))}:${p(Math.floor(s%3600/60))}:${p(s%60)}`}
 let chs=null;
 function mixInit(){ac=ac||new AudioContext();ac.resume();if(chs)return;const buf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
- chs=[['lowpass',140],['bandpass',420],['highpass',5200]].map(c=>{const o=ac.createBufferSource();o.buffer=buf;o.loop=true;const f=ac.createBiquadFilter();f.type=c[0];f.frequency.value=c[1];const g=ac.createGain();g.gain.value=0;o.connect(f).connect(g).connect(ac.destination);o.start();return g})}
-$$('.mx').forEach((el,i)=>el.oninput=()=>{mixInit();chs[i].gain.value=el.value/100*(i==2?.15:.6)});
+ chs=[['lowpass',140],['bandpass',420],['highpass',5200],['bandpass',2500]].map(c=>{const o=ac.createBufferSource();o.buffer=buf;o.loop=true;const f=ac.createBiquadFilter();f.type=c[0];f.frequency.value=c[1];const g=ac.createGain();g.gain.value=0;o.connect(f).connect(g).connect(ac.destination);o.start();return g})}
+$$('.mx').forEach((el,i)=>el.oninput=()=>{mixInit();chs[i].gain.value=el.value/100*(i>1?.15:.6)});
 $('#tts').onclick=()=>{if(!curCard||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(showA?curCard.a:curCard.q);u.pitch=.5;u.rate=.88;speechSynthesis.cancel();speechSynthesis.speak(u)};
 $('#dexp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S.cards.map(c=>({q:c.q,a:c.a})))],{type:'application/json'}));a.download='pulsar-deck.json';a.click()};
 $('#dimp').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{JSON.parse(t).forEach(c=>c.q&&c.a&&S.cards.push({id:S.cid++,q:String(c.q),a:String(c.a),ef:2.5,int:0,reps:0,due:Date.now()}));save();renderCards()}catch(x){alert('That file is not a valid deck.')}})};
@@ -385,7 +439,105 @@ function fov(){const f=+$('#ft').value,e=+$('#fe').value,a=+$('#fa').value,w=+$(
 ['ft','fe','fa','fs'].forEach(i=>$('#'+i).oninput=fov);fov();
 function coord(){const ra=+$('#cra').value*Math.PI/12,de=+$('#cde').value*Math.PI/180,la=+$('#cla').value*Math.PI/180,H=+$('#cls').value*Math.PI/12-ra,al=Math.asin(Math.sin(de)*Math.sin(la)+Math.cos(de)*Math.cos(la)*Math.cos(H)),az=Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(la)-Math.tan(de)*Math.cos(la))+Math.PI;$('#co').textContent=`Altitude ${(al*180/Math.PI).toFixed(2)}°, azimuth ${(az*180/Math.PI%360).toFixed(2)}°`}
 ['cra','cde','cla','cls'].forEach(i=>$('#'+i).oninput=coord);coord();
-go('map');
+function md(t){const b=[];t=t.replace(/```\w*\n([\s\S]*?)```/g,(_,c)=>{b.push(`<pre class="code"><button class="btn cp">Copy</button><code>${c.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\b(def|return|if|else|elif|for|while|import|from|class|const|let|var|function|fn|mut|int|void|auto|struct|impl|use|print)\b/g,'<u>$1</u>').replace(/(#.*|\/\/.*)/g,'<i>$1</i>')}</code></pre>`);return'\u0001'+(b.length-1)+'\u0001'});return md0(t).replace(/\u0001(\d+)\u0001/g,(_,i)=>b[i])}
+$('#prev').onclick=e=>{const b=e.target.closest('.cp');if(b){navigator.clipboard?.writeText(b.parentNode.querySelector('code').textContent);b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1200)}};
+const J=u=>fetch(u).then(r=>r.json());
+let me=null,liveT=null;
+function iss(){J('https://api.wheretheiss.at/v1/satellites/25544').then(d=>{const x=$('#issc').getContext('2d');x.clearRect(0,0,360,180);x.strokeStyle=css('--dim');for(let i=1;i<6;i++){x.beginPath();x.moveTo(i*60,0);x.lineTo(i*60,180);x.stroke()}x.beginPath();x.moveTo(0,90);x.lineTo(360,90);x.stroke();x.fillStyle=css('--n3');x.beginPath();x.arc(d.longitude+180,90-d.latitude,6,0,7);x.fill();
+ $('#issi').textContent=`Lat ${d.latitude.toFixed(1)}°, lon ${d.longitude.toFixed(1)}°, altitude ${d.altitude.toFixed(0)} km, ${Math.round(d.velocity)} km/h`;
+ if(me){const k=Math.hypot(d.latitude-me[0],(d.longitude-me[1])*Math.cos(me[0]*Math.PI/180))*111;$('#issp').textContent=k<1500?`Pass overhead alert: the ISS is ${Math.round(k)} km away.`:`Ground distance to the ISS: ${Math.round(k)} km.`}}).catch(()=>$('#issi').textContent='ISS feed unavailable.')}
+$('#loc').onclick=()=>navigator.geolocation?.getCurrentPosition(p=>{me=[p.coords.latitude,p.coords.longitude];iss()});
+function liveInit(){iss();clearInterval(liveT);liveT=setInterval(()=>{if(cur=='live')iss()},5000);
+ J('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json').then(d=>$('#wxw').textContent=d.WindSpeed+' km/s').catch(()=>$('#wxw').textContent='Unavailable');
+ J('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json').then(d=>{const k=+d[d.length-1][1];$('#wxk').textContent='Kp index '+k+(k>=5?'. Geomagnetic storm alert.':'')}).catch(()=>{});
+ J('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json').then(d=>$('#wxf').textContent='Latest flare class '+(d[0]&&(d[0].max_class||d[0].current_class)||'none reported')).catch(()=>{});
+ J('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY').then(d=>{$('#apod').innerHTML=(d.media_type=='image'?`<img src="${d.url}" alt="${d.title}" style="width:100%">`:`<a href="${d.url}" target="_blank" rel="noopener">${d.title}</a>`)+`<details><summary>${d.title}</summary>${d.explanation}</details><button class="btn" id="apb">Use as background</button>`;const b=$('#apb');if(b&&d.media_type=='image')b.onclick=()=>{document.body.style.background=`linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.55)),url(${d.url}) center/cover`}}).catch(()=>$('#apod').textContent='APOD unavailable. The shared demo key may be rate limited.');
+ const a=new Date(),e=new Date(a.getTime()+6*864e5),f=d=>d.toISOString().slice(0,10);
+ J(`https://api.nasa.gov/neo/rest/v1/feed?start_date=${f(a)}&end_date=${f(e)}&api_key=DEMO_KEY`).then(d=>{const l=Object.values(d.near_earth_objects).flat().map(o=>({n:o.name,ld:+o.close_approach_data[0].miss_distance.lunar})).sort((a,b)=>a.ld-b.ld).slice(0,12),x=$('#neoc').getContext('2d');x.clearRect(0,0,320,320);x.strokeStyle=css('--dim');[1,5,10,20].forEach(r=>{x.beginPath();x.arc(160,160,Math.log10(r+1)/Math.log10(21)*150,0,7);x.stroke()});x.fillStyle=css('--ac2');x.beginPath();x.arc(160,160,5,0,7);x.fill();
+  l.forEach((o,i)=>{const r=Math.log10(Math.min(o.ld,20)+1)/Math.log10(21)*150,t=i*2.4;x.fillStyle=css('--n3');x.beginPath();x.arc(160+Math.cos(t)*r,160+Math.sin(t)*r,3,0,7);x.fill()});$('#neoi').textContent='Closest this week: '+l.slice(0,3).map(o=>`${o.n} at ${o.ld.toFixed(1)} LD`).join(', ')}).catch(()=>$('#neoi').textContent='NEO feed unavailable.')}
+function calc2(op){const e=$('#ce').value;try{const r=nerdamer(op=='d'?`diff(${e},x)`:`integrate(${e},x)`),L=nerdamer(e).toTeX(),pre=op=='d'?'\\frac{d}{dx}\\left['+L+'\\right]':'\\int '+L+'\\,dx',tex=pre+'='+r.toTeX()+(op=='d'?'':'+C');$('#cr').innerHTML=window.katex?katex.renderToString(tex,{throwOnError:false,displayMode:true}):r.toString()}catch(x){$('#cr').textContent='Could not solve that expression. Use x as the variable.'}}
+$('#cd').onclick=()=>calc2('d');$('#ci').onclick=()=>calc2('i');
+function mat(){const a=+$('#ma').value,b=+$('#mb').value,c=+$('#mc').value,d=+$('#md').value,x=$('#mcv').getContext('2d'),T=(u,v)=>[150+(a*u+b*v)*40,150-(c*u+d*v)*40];x.clearRect(0,0,300,300);x.strokeStyle=css('--dim');
+ for(let i=-3;i<=3;i++)[[i,-3,i,3],[-3,i,3,i]].forEach(l=>{const p=T(l[0],l[1]),q=T(l[2],l[3]);x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(q[0],q[1]);x.stroke()});
+ const tr=a+d,de=a*d-b*c,ds=tr*tr/4-de;let t=`det ${de.toFixed(2)}, trace ${tr.toFixed(2)}. `;x.strokeStyle=css('--n3');x.lineWidth=2;
+ if(ds>=0){const q=Math.sqrt(ds);[tr/2+q,tr/2-q].forEach(l=>{let v=Math.abs(b)>1e-9?[b,l-a]:Math.abs(c)>1e-9?[l-d,c]:(Math.abs(l-a)<1e-9?[1,0]:[0,1]);const n=Math.hypot(v[0],v[1])||1;v=[v[0]/n,v[1]/n];x.beginPath();x.moveTo(150-v[0]*140,150+v[1]*140);x.lineTo(150+v[0]*140,150-v[1]*140);x.stroke();t+=`λ=${l.toFixed(2)} along (${v[0].toFixed(2)}, ${v[1].toFixed(2)}). `})}else t+='Complex eigenvalues. ';
+ x.lineWidth=1;t+=de<0?'Origin is a saddle.':ds<0?(Math.abs(tr)<1e-9?'Origin is a center.':tr<0?'Origin is a stable spiral.':'Origin is an unstable spiral.'):(tr<0?'Origin is a stable node.':'Origin is an unstable node.');$('#mo').textContent=t;
+ const y=$('#pcv').getContext('2d');y.clearRect(0,0,300,300);y.strokeStyle=css('--ac');for(let i=-5;i<=5;i++)for(let j=-5;j<=5;j++){const u=i*.6,w=j*.6,dx=a*u+b*w,dy=c*u+d*w,n=Math.hypot(dx,dy)||1,px=150+u*40,py=150-w*40;y.beginPath();y.moveTo(px,py);y.lineTo(px+dx/n*10,py-dy/n*10);y.stroke()}}
+['ma','mb','mc','md'].forEach(i=>$('#'+i).oninput=mat);
+function graph(){const x=$('#gcv').getContext('2d'),e=$('#ge').value,m=$('#gm').value;$('#gerr').textContent=m=='pol'?'Use t as the angle.':'';x.clearRect(0,0,300,300);x.strokeStyle=css('--dim');x.beginPath();x.moveTo(0,150);x.lineTo(300,150);x.moveTo(150,0);x.lineTo(150,300);x.stroke();x.strokeStyle=css('--ac');x.beginPath();
+ try{const f=new Function('x','t','with(Math){return '+e+'}');let st=true;for(let i=0;i<=600;i++){let X,Y;if(m=='cart'){X=-7.5+i/40;Y=f(X,X)}else{const t=i/600*Math.PI*2,r=f(t,t);X=r*Math.cos(t);Y=r*Math.sin(t)}const px=150+X*20,py=150-Y*20;if(!isFinite(py)||!isFinite(px)){st=true;continue}st?x.moveTo(px,py):x.lineTo(px,py);st=false}x.stroke()}catch(err){$('#gerr').textContent='Invalid expression.'}}
+$('#ge').oninput=graph;$('#gm').onchange=graph;
+$('#er').oninput=errA;function errA(){const v=$('#er').value.split(/[ ,]+/).filter(Boolean).map(Number).filter(Number.isFinite),n=v.length;if(n<2){$('#ero').textContent='Enter at least two measurements.';return}const m=v.reduce((a,b)=>a+b,0)/n,sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/(n-1));$('#ero').textContent=`Mean ${m.toFixed(4)}, std dev ${sd.toFixed(4)}, std error ${(sd/Math.sqrt(n)).toFixed(4)}, uncertainty ${(sd/Math.abs(m)*100).toFixed(2)}%`}errA();
+const rb0=()=>[{x:150,y:150,vx:0,vy:0,m:600},{x:150,y:80,vx:2.9,vy:0,m:2},{x:150,y:230,vx:-2.1,vy:0,m:3}];
+let bodies=rb0();$('#nbr').onclick=()=>bodies=rb0();
+$('#nbc').onclick=e=>{const r=e.target.getBoundingClientRect();bodies.push({x:(e.clientX-r.left)*300/r.width,y:(e.clientY-r.top)*300/r.height,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,m:+$('#nbm').value||5})};
+(function nbl(){if(cur=='lab'){const x=$('#nbc').getContext('2d');for(let k=0;k<3;k++){bodies.forEach(a=>{let ax=0,ay=0;bodies.forEach(b=>{if(a!==b){const dx=b.x-a.x,dy=b.y-a.y,r2=dx*dx+dy*dy+30,f=b.m/(r2*Math.sqrt(r2));ax+=dx*f;ay+=dy*f}});a.vx+=ax*.2;a.vy+=ay*.2});bodies.forEach(a=>{a.x+=a.vx*.2;a.y+=a.vy*.2})}
+ x.fillStyle='rgba(4,3,15,.18)';x.fillRect(0,0,300,300);bodies.forEach(a=>{x.fillStyle=css('--ac');x.beginPath();x.arc(a.x,a.y,2+Math.cbrt(a.m),0,7);x.fill()})}requestAnimationFrame(nbl)})();
+const lf=(x,u)=>x-(1-u)*Math.sign(x+u)/Math.pow(x+u,2)-u*Math.sign(x-1+u)/Math.pow(x-1+u,2);
+const rt=(lo,hi,u)=>{for(let i=0;i<60;i++){const m=(lo+hi)/2;if(lf(lo,u)*lf(m,u)<=0)hi=m;else lo=m}return(lo+hi)/2};
+function lag(){const u=+$('#lmu').value,x=$('#lcv').getContext('2d'),P=[['L1',rt(-u+.02,1-u-.02,u),0],['L2',rt(1-u+.02,2,u),0],['L3',rt(-2,-u-.02,u),0],['L4',.5-u,.866],['L5',.5-u,-.866]],X=v=>150+v*70,Y=v=>100-v*70;x.clearRect(0,0,300,200);
+ x.fillStyle=css('--n3');x.beginPath();x.arc(X(-u),Y(0),9,0,7);x.fill();x.fillStyle=css('--ac2');x.beginPath();x.arc(X(1-u),Y(0),4,0,7);x.fill();x.fillStyle=css('--fg');x.font='11px JetBrains Mono';P.forEach(q=>{x.beginPath();x.arc(X(q[1]),Y(q[2]),3,0,7);x.fill();x.fillText(q[0],X(q[1])+5,Y(q[2])-5)})}
+$('#lmu').oninput=lag;
+function dvc(){const i=+$('#dis').value,a=+$('#dm0').value,b=+$('#dmf').value;$('#dvo').textContent=`Mass ratio ${(a/b).toFixed(2)}, delta-v ${(i*9.80665*Math.log(a/b)).toFixed(0)} m/s`}['dis','dm0','dmf'].forEach(i=>$('#'+i).oninput=dvc);
+function dop(){const b=+$('#db').value,l=550*Math.sqrt((1+b)/(1-b)),h=Math.max(0,Math.min(300,270-(l-380)/320*270));$('#dsw').style.background=`hsl(${h},90%,50%)`;$('#dvt').textContent=`${b>0?'Receding':b<0?'Approaching':'At rest'} at ${Math.abs(b)}c: 550 nm light is seen at ${l.toFixed(0)} nm${l<380?' (ultraviolet)':l>700?' (infrared)':''}.`}$('#db').oninput=dop;
+let py;$('#pyr').onclick=async()=>{$('#pyo').textContent='Loading Python. The first run downloads about 10 MB.';try{if(!py){await new Promise((r,j)=>{const t=document.createElement('script');t.src='https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js';t.onload=r;t.onerror=j;document.head.appendChild(t)});py=await loadPyodide()}let o='';py.setStdout({batched:t=>o+=t+'\n'});const r=await py.runPythonAsync($('#pyc').value);$('#pyo').textContent=o+(r!==undefined?String(r):'')}catch(e){$('#pyo').textContent=String(e)}};
+S.snips=S.snips||[];
+function vaultR(){$('#vlt').innerHTML=S.snips.map((v,i)=>`<div><button class="btn" data-ld="${i}" style="padding:2px 8px">${v.t}</button> <button class="btn" data-rm="${i}" style="padding:2px 8px">Delete</button></div>`).join('')||'<div class="tag">No snippets saved yet.</div>'}
+$('#pys').onclick=()=>{const t=prompt('Snippet name');if(t){S.snips.push({t,c:$('#pyc').value});save();vaultR()}};
+$('#vlt').onclick=e=>{const l=e.target.closest('[data-ld]'),r=e.target.closest('[data-rm]');if(l)$('#pyc').value=S.snips[+l.dataset.ld].c;if(r){S.snips.splice(+r.dataset.rm,1);save();vaultR()}};
+const CMD=l=>{const a=l.match(/"[^"]*"|\S+/g)||[],c=a[0],g=a.slice(1).map(x=>x.replace(/"/g,''));
+ if(c=='orbit'&&g[0]=='focus'){$('#tf').value=+g[1]||25;go('timer');$('#trst').click();$('#tgo').click();return`Focus orbit of ${+g[1]||25} min engaged.`}
+ if(c=='node'&&g[0]=='create'){S.notes.push({id:S.nid,title:g[1]||'Untitled',tags:'',body:'',rev:0,last:Date.now()});nid=S.nid++;save();nodes=[];return'Node created.'}
+ if(c=='open'){const v=VIEWS.find(x=>x[0]==g[0]||x[1].toLowerCase()==g.join(' ').toLowerCase());if(v){go(v[0]);return'Opened '+v[1]}return'Unknown sector.'}
+ if(c=='theme'){theme(g[0]);return'Theme set.'}
+ if(c=='help')return'orbit focus N | node create "Title" | open <view> | theme cyan|void|violet|red|gold';return'Unknown command.'};
+addEventListener('keydown',e=>{if((e.key=='`'||e.key=='~')&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)){e.preventDefault();$('#cli').classList.toggle('on');$('#cin').focus()}else if(e.key=='Escape')$('#cli').classList.remove('on')});
+$('#cin').onkeydown=e=>{if(e.key=='Enter'){const v=$('#cin').value;$('#cout').textContent+='> '+v+'\n'+CMD(v)+'\n';$('#cin').value=''}};
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null;
+$('#voice').onclick=()=>{if(!SR){alert('Voice control is not supported in this browser.');return}if(rec){rec.stop();rec=null;$('#voice').textContent='Voice: off';return}rec=new SR();rec.continuous=true;
+ rec.onresult=e=>{const t=e.results[e.results.length-1][0].transcript.toLowerCase().trim();if(!t.startsWith('computer'))return;const q=t.replace('computer','').trim();if(q.includes('start')&&q.includes('timer'))CMD('orbit focus 25');else if(q.startsWith('open')){const w=q.replace('open','').replace('notes','').trim(),v=VIEWS.find(x=>x[1].toLowerCase().includes(w)||x[0]==w);if(v)go(v[0]);else{const n=S.notes.find(n=>n.title.toLowerCase().includes(w));if(n)open_(n.id)}}};rec.start();$('#voice').textContent='Voice: on'};
+let bn=[];$('#bin').onchange=()=>{bn.forEach(o=>o.stop());bn=[];const f=+$('#bin').value;if(!f)return;ac=ac||new AudioContext();ac.resume();[[200,-1],[200+f,1]].forEach(q=>{const o=ac.createOscillator(),g=ac.createGain(),pn=ac.createStereoPanner();o.frequency.value=q[0];pn.pan.value=q[1];g.gain.value=.05;o.connect(g).connect(pn).connect(ac.destination);o.start();bn.push(o)})};
+const cu=document.createElement('style');document.head.appendChild(cu);cu.textContent=S.css||'';$('#csst').value=S.css||'';$('#csst').oninput=()=>{S.css=$('#csst').value;cu.textContent=S.css;save()};
+$('#spl').innerHTML='<option value="">Off</option>'+VIEWS.map(v=>`<option value="${v[0]}">${v[1]}</option>`).join('');$('#spl').value=S.split||'';$('#spl').onchange=()=>{S.split=$('#spl').value;save();go(cur)};
+$('#lockd').onchange=()=>{if($('#lockd').checked)document.documentElement.requestFullscreen?.()};
+addEventListener('beforeunload',e=>{if(run&&$('#lockd').checked){e.preventDefault();e.returnValue=''}});
+$('#jexp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));a.download='event-horizon-station.json';a.click()};
+$('#jimp').onchange=e=>{e.target.files[0].text().then(t=>{try{const d=JSON.parse(t);if(!d.notes||!d.cards)throw 0;localStorage.setItem(KEY,t);location.reload()}catch(x){alert('That file is not a station backup.')}})};
+$('#prn').onclick=()=>{const n=note();if(!n)return;const w=open('');w.document.write(`<title>${n.title}</title><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css"><body style="font:13pt Georgia,serif;max-width:700px;margin:30px auto;line-height:1.5"><h1>${n.title}</h1>${md(n.body)}</body>`);w.document.close();setTimeout(()=>w.print(),600)};
+function renderTM(){const c=[...S.cards].sort((a,b)=>a.ef-b.ef).slice(0,5).map(c=>'Card: '+c.q),n=[...S.notes].sort((a,b)=>a.last-b.last).slice(0,3).map(n=>'Note: '+n.title);$('#tm').innerHTML=[...c,...n].join('<br>')||'Nothing to review yet.'}
+const subjNotes=()=>S.notes.filter(n=>(n.subj||'General')==S.subj);
+function fixSubj(){S.subjects=S.subjects||['General'];S.notes.forEach(n=>{n.subj=n.subj||'General';if(!S.subjects.includes(n.subj))S.subjects.push(n.subj)});if(!S.subjects.includes(S.subj))S.subj='General';let l=subjNotes();if(!l.length){S.notes.push({id:S.nid,title:'New note',tags:'',body:'',rev:0,last:Date.now(),subj:S.subj});nid=S.nid++;l=subjNotes()}if(!l.some(n=>n.id==nid))nid=l[0].id;S.sel=nid}
+function tabsR(){$('#stabs').innerHTML=S.subjects.map(x=>`<button class="btn ${x==S.subj?'on':''}" data-sj="${x}">${x}</button>`).join('')+'<button class="btn" id="sadd">+ Subject</button>'+(S.subj!='General'?'<button class="btn" id="sdel">Delete subject</button>':'')}
+$('#stabs').onclick=e=>{const b=e.target.closest('[data-sj]');if(b){S.subj=b.dataset.sj;save();renderNotes();return}
+ if(e.target.id=='sadd'){const n=(prompt('Subject name')||'').replace(/["<>]/g,'').trim();if(n&&!S.subjects.includes(n)){S.subjects.push(n);S.subj=n;save();renderNotes()}}
+ if(e.target.id=='sdel'&&confirm('Delete this subject? Its notes move to General.')){S.notes.forEach(n=>{if(n.subj==S.subj)n.subj='General'});S.subjects=S.subjects.filter(x=>x!=S.subj);S.subj='General';save();renderNotes()}};
+fixSubj();
+const ID=['sin','cos','tan','asin','acos','atan','ln','log','logb','sqrt','abs','exp','pi','e','Ans','fact'];
+let ans=0;
+const dg=()=>S.deg!==false,rd=x=>dg()?x*Math.PI/180:x,ad=x=>dg()?x*180/Math.PI:x;
+const fact=n=>{if(n<0||n>170||n%1)return NaN;let r=1;for(let i=2;i<=n;i++)r*=i;return r};
+function evalX(src){if(!/^[0-9a-zA-Z+\-*/().,\s^!%]*$/.test(src)||(src.match(/[a-zA-Z]+/g)||[]).some(i=>!ID.includes(i)))throw 0;
+ const t=src.replace(/(\d+(?:\.\d+)?)!/g,'fact($1)').replace(/\^/g,'**');
+ return Function('sin','cos','tan','asin','acos','atan','ln','log','logb','sqrt','abs','exp','pi','e','Ans','fact',`"use strict";return (${t||0})`)(x=>Math.sin(rd(x)),x=>Math.cos(rd(x)),x=>Math.tan(rd(x)),x=>ad(Math.asin(x)),x=>ad(Math.acos(x)),x=>ad(Math.atan(x)),Math.log,Math.log10,(x,b)=>Math.log(x)/Math.log(b),Math.sqrt,Math.abs,Math.exp,Math.PI,Math.E,ans,fact)}
+function histR(){$('#chs').innerHTML=(S.calcH||[]).map(h=>`<div>${h}</div>`).join('')}
+function cal(){const src=$('#cx').value;try{const r=evalX(src);if(typeof r!='number'||isNaN(r))throw 0;ans=r;const o=+r.toPrecision(12);$('#cr2').textContent='= '+o;$('#cb').textContent=Number.isInteger(r)&&Math.abs(r)<2**53?`bin ${r.toString(2)}  oct ${r.toString(8)}  hex ${r.toString(16).toUpperCase()}`:'';S.calcH=[src+' = '+o,...(S.calcH||[])].slice(0,15);save();histR()}catch(x){$('#cr2').textContent='Check the expression.'}}
+const KB=['sin(','cos(','tan(','ln(','log(','asin(','acos(','atan(','sqrt(','^','(',')','pi','e','!','7','8','9','/','C','4','5','6','*','⌫','1','2','3','-','Ans','0','.','logb(','+','='];
+$('#keys').innerHTML=KB.map(k=>`<button class="btn" data-k="${k}">${k}</button>`).join('');
+$('#keys').onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=b.dataset.k,i=$('#cx');if(k=='=')cal();else if(k=='C'){i.value='';$('#cr2').textContent='= 0';$('#cb').textContent=''}else if(k=='⌫')i.value=i.value.slice(0,-1);else i.value+=k;i.focus()};
+$('#cx').onkeydown=e=>{if(e.key=='Enter')cal()};
+function degR(){$('#cdeg').textContent='Angles: '+(dg()?'degrees':'radians')}degR();$('#cdeg').onclick=()=>{S.deg=!dg();save();degR()};histR();
+$('#tf').value=S.tf||25;$('#tb').value=S.tb||5;total=tl=+$('#tf').value*60;drawOrbit();
+['tf','tb'].forEach(i=>$('#'+i).addEventListener('input',()=>{S[i]=+$('#'+i).value;save()}));
+$('#mvol').value=S.mvol??.7;$('#mvol').addEventListener('input',()=>{S.mvol=+$('#mvol').value;save()});
+addEventListener('pagehide',save);
+navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+const steps=['Powering up the station','Restoring '+S.notes.length+' notes and '+S.cards.length+' cards','Charting the starmap','Calibrating instruments','Ready for departure'];
+let ls=0,ldDone=false;const t0=Date.now();
+const lt=setInterval(()=>{ls=Math.min(ls+1,3);$('#ldt').textContent=steps[ls];$('#ldb').style.width=(ls+1)/5*100+'%'},380);
+$('#ldt').textContent=steps[0];$('#ldb').style.width='15%';
+function hideLoad(){if(ldDone)return;ldDone=true;clearInterval(lt);$('#ldt').textContent=steps[4];$('#ldb').style.width='100%';setTimeout(()=>{$('#load').classList.add('out');setTimeout(()=>$('#load').remove(),800)},300)}
+addEventListener('load',()=>setTimeout(hideLoad,Math.max(0,2000-(Date.now()-t0))));setTimeout(hideLoad,7000);
+go(VIEWS.some(v=>v[0]==S.view)?S.view:'map');
 </script>
 </body>
 </html>
