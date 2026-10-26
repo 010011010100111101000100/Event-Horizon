@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Horizon — Deep Space Academic Station</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{--bg:#02030a;--fg:#d8e6ff;--dim:#6f7f9f;--ac:#7cf0ff;--ac2:#b58cff;--warn:#ff5d6c;--glass:rgba(10,16,38,.62)}
+[data-theme=violet]{--bg:#0a0318;--fg:#eadcff;--dim:#8b72b5;--ac:#c58cff;--ac2:#ff7ad9;--glass:rgba(30,10,56,.6)}
+[data-theme=red]{--bg:#050000;--fg:#ff6a5c;--dim:#8a3028;--ac:#ff3b30;--ac2:#ff8a5c;--glass:rgba(40,4,0,.6)}
+[data-theme=void]{--bg:#000;--fg:#e6e6e6;--dim:#777;--ac:#fff;--ac2:#aaa;--glass:rgba(20,20,20,.6)}
+[data-theme=gold]{--bg:#140c02;--fg:#ffe9bd;--dim:#a88650;--ac:#ffc04d;--ac2:#ff8f3d;--glass:rgba(50,30,4,.6)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 'Space Grotesk',system-ui,sans-serif;overflow:hidden;transition:background .8s,color .8s}
+#sky,#neb{position:fixed;inset:0;z-index:0}
+#neb{width:100%;height:100%;filter:blur(18px) saturate(1.3)}
+.shell{position:relative;z-index:1;height:100%;display:grid;grid-template-columns:200px 1fr;grid-template-rows:auto 1fr}
+header{grid-column:1/3;display:flex;align-items:center;gap:16px;padding:10px 18px;border-bottom:1px solid color-mix(in srgb,var(--ac) 30%,transparent)}
+h1{font-size:19px;margin:0;letter-spacing:.04em}
+h1 small{display:block;font:400 11px 'JetBrains Mono',monospace;color:var(--dim);letter-spacing:.08em}
+#crumbs{font:12px 'JetBrains Mono',monospace;color:var(--dim);flex:1;overflow:hidden;white-space:nowrap}
+#crumbs b{color:var(--ac);font-weight:400;cursor:pointer}
+nav{display:flex;flex-direction:column;gap:4px;padding:14px 10px;border-right:1px solid color-mix(in srgb,var(--ac) 20%,transparent)}
+nav button,.btn{font:600 13px 'Space Grotesk',sans-serif;color:var(--fg);background:var(--glass);border:1px solid color-mix(in srgb,var(--ac) 35%,transparent);padding:8px 12px;text-align:left;cursor:pointer;clip-path:polygon(0 0,calc(100% - 9px) 0,100% 9px,100% 100%,9px 100%,0 calc(100% - 9px));backdrop-filter:blur(8px)}
+nav button.on,.btn:hover,nav button:hover{border-color:var(--ac);color:var(--ac);box-shadow:0 0 14px color-mix(in srgb,var(--ac) 40%,transparent)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+main{position:relative;overflow:auto;padding:18px}
+.view{display:none;height:100%}.view.on{display:block}
+.panel{background:var(--glass);border:1px solid color-mix(in srgb,var(--ac) 40%,transparent);backdrop-filter:blur(12px);padding:14px;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 14px,100% 100%,14px 100%,0 calc(100% - 14px))}
+.mono{font-family:'JetBrains Mono',monospace}
+h2{margin:0 0 10px;font-size:15px;color:var(--ac)}
+input,textarea,select{width:100%;background:rgba(0,0,0,.4);color:var(--fg);border:1px solid color-mix(in srgb,var(--ac) 30%,transparent);padding:8px;font:13px 'JetBrains Mono',monospace}
+textarea{resize:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:12px;height:calc(100% - 50px)}
+.split>*{overflow:auto}
+#prev h1,#prev h2,#prev h3{color:var(--ac);font-size:16px;margin:.6em 0 .3em}
+#prev code{background:rgba(255,255,255,.08);padding:1px 4px}
+#map{width:100%;height:100%;display:block;cursor:pointer}
+#hint{position:absolute;left:24px;bottom:22px;font:12px 'JetBrains Mono',monospace;color:var(--dim)}
+.card{height:190px;display:grid;place-items:center;text-align:center;font-size:20px;padding:20px;cursor:pointer;position:relative;overflow:hidden}
+.card.scan::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--ac);box-shadow:0 0 18px var(--ac);animation:scan .5s linear}
+@keyframes scan{from{top:0}to{top:100%}}
+.crit{animation:pulse 1s infinite alternate;color:var(--warn)}
+@keyframes pulse{to{opacity:.35}}
+.stat{font-size:30px;font-weight:700;color:var(--ac)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+#pal{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.6);display:none;padding-top:14vh}
+#pal.on{display:block}
+#pal .box{max-width:520px;margin:auto}
+#pal li{list-style:none;padding:6px 8px;cursor:pointer}#pal li.sel{background:color-mix(in srgb,var(--ac) 20%,transparent);color:var(--ac)}
+#pal ul{margin:8px 0 0;padding:0;max-height:40vh;overflow:auto}
+.hud nav,.hud header{display:none}.hud .shell{grid-template-columns:1fr;grid-template-rows:1fr}
+.hud #hudx{display:block}#hudx{display:none;position:fixed;top:10px;right:10px;z-index:5}
+.tag{font:11px 'JetBrains Mono',monospace;color:var(--ac2)}
+@media(max-width:720px){.shell{grid-template-columns:1fr;grid-template-rows:auto auto 1fr}header,nav{grid-column:1}nav{flex-direction:row;overflow:auto;border:0}.split{grid-template-columns:1fr;height:auto}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+
+:root{--bg:#04030f;--ac:#8eeaff;--ac2:#c28cff;--n3:#ff6fb5;--glass:rgba(16,10,44,.58)}
+[data-theme=violet]{--n3:#4a6bff}[data-theme=red]{--n3:#ff2a6d}[data-theme=void]{--n3:#888888}[data-theme=gold]{--n3:#ff5c7a}
+header{background:linear-gradient(90deg,var(--glass),transparent);backdrop-filter:blur(14px);flex-wrap:wrap}
+h1{font-size:23px;font-weight:700;background:linear-gradient(90deg,var(--ac),var(--ac2),var(--n3));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1 small{-webkit-text-fill-color:var(--dim)}
+.panel{background:linear-gradient(155deg,color-mix(in srgb,var(--ac2) 16%,transparent),var(--glass) 55%);border-color:color-mix(in srgb,var(--ac2) 45%,transparent)}
+nav button{transition:transform .15s,box-shadow .15s}
+nav button.on{background:linear-gradient(90deg,color-mix(in srgb,var(--ac) 22%,transparent),var(--glass));transform:translateX(4px)}
+.stat{background:linear-gradient(90deg,var(--ac),var(--n3));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{letter-spacing:.03em;text-shadow:0 0 12px color-mix(in srgb,var(--ac) 60%,transparent)}
+input:focus,textarea:focus,select:focus{border-color:var(--ac2);box-shadow:0 0 12px color-mix(in srgb,var(--ac2) 40%,transparent);outline:0}
+input[type=range]{accent-color:var(--ac2);padding:0}
+.card{font-size:22px;background:radial-gradient(circle at 50% 40%,color-mix(in srgb,var(--n3) 18%,transparent),transparent 70%),var(--glass)}
+main{scrollbar-color:var(--ac2) transparent}
+#hint{text-shadow:0 0 8px #000}
+</style>
+</head>
+<body data-theme="cyan">
+<canvas id="neb"></canvas>
+<canvas id="sky"></canvas>
+<button class="btn" id="hudx">Exit focus HUD</button>
+<div class="shell">
+<header>
+  <h1>Event Horizon<small>Deep Space Academic Station</small></h1>
+  <div id="crumbs"></div>
+  <select id="theme" style="width:auto" aria-label="Spectral filter">
+    <option value="cyan">Cyber Cyan</option><option value="void">Deep Void</option><option value="violet">Nebula Violet</option><option value="red">Night Vision Red</option>
+  </select>
+  <button class="btn" id="sfx">Clicks: off</button>
+  <button class="btn" id="mus">Music: off</button>
+  <input type="range" id="mvol" min="0" max="1" step="0.01" value="0.7" style="width:80px" aria-label="Music volume">
+  <button class="btn" id="hudb">Focus HUD</button>
+  <button class="btn" id="palb">Search Ctrl+K</button>
+</header>
+<nav id="nav"></nav>
+<main>
+<section class="view" id="v-map"><canvas id="map"></canvas><div id="hint">Click a star to open the note. Brighter stars are notes you review often. Matching tags draw constellation lines.</div></section>
+
+<section class="view" id="v-notes">
+  <div class="row" style="margin-bottom:10px">
+    <select id="nsel" style="width:200px"></select>
+    <button class="btn" id="nnew">New note</button><button class="btn" id="ndel">Delete</button><button class="btn" id="nexp">Export .md</button>
+    <span class="tag">Markdown + LaTeX: $E=mc^2$ or $$...$$</span>
+  </div>
+  <div class="split">
+    <div class="panel"><input id="ntitle" placeholder="Note title"><input id="ntags" placeholder="tags, comma separated" style="margin:8px 0"><textarea id="nbody" style="height:calc(100% - 90px)" placeholder="Write here."></textarea></div>
+    <div class="panel" id="prev"></div>
+  </div>
+</section>
+
+<section class="view" id="v-cards">
+  <div class="split">
+    <div class="panel">
+      <h2>Pulsar deck</h2>
+      <div class="mono tag" id="due"></div>
+      <div class="panel card" id="card" tabindex="0" role="button">No cards yet. Add one on the right.</div>
+      <div class="row" style="margin-top:10px" id="grade">
+        <button class="btn" data-q="1">Forgot</button><button class="btn" data-q="3">Hard</button><button class="btn" data-q="4">Good</button><button class="btn" data-q="5">Easy</button>
+      </div>
+    </div>
+    <div class="panel"><h2>Add card</h2><input id="cq" placeholder="Question"><textarea id="ca" rows="4" placeholder="Answer" style="margin:8px 0"></textarea><button class="btn" id="cadd">Save card</button><div id="clist" class="mono" style="margin-top:12px;font-size:12px"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-timer">
+  <div class="panel" style="max-width:520px;margin:auto;text-align:center">
+    <h2>Warp drive focus engine</h2>
+    <canvas id="orbit" width="320" height="320"></canvas>
+    <div class="stat mono" id="clock">25:00</div>
+    <div class="row" style="justify-content:center;margin-top:8px">
+      <button class="btn" id="tgo">Start focus</button><button class="btn" id="trst">Reset</button>
+      <label class="tag">Focus min <input id="tf" type="number" value="25" min="1" style="width:64px"></label>
+      <label class="tag">Break min <input id="tb" type="number" value="5" min="1" style="width:64px"></label>
+    </div>
+    <p class="tag" id="tmode">Ready for departure.</p>
+  </div>
+</section>
+
+<section class="view" id="v-sand">
+  <div class="split">
+    <div class="panel"><canvas id="sim" style="width:100%;height:100%"></canvas></div>
+    <div class="panel">
+      <h2>Kepler sandbox</h2>
+      <label class="tag">Central mass <span id="mv"></span></label><input type="range" id="sm" min="50" max="400" value="200">
+      <label class="tag">Start distance <span id="dv"></span></label><input type="range" id="sd" min="40" max="200" value="120">
+      <label class="tag">Start velocity <span id="vv"></span></label><input type="range" id="sv" min="0.2" max="4" step="0.05" value="1.3">
+      <button class="btn" id="sgo" style="margin:10px 0">Launch probe</button>
+      <h2 style="margin-top:14px">Stellar magnitude calculator</h2>
+      <div class="row"><input id="mm" placeholder="apparent m" style="width:48%"><input id="mM" placeholder="absolute M" style="width:48%"></div>
+      <p class="mono" id="mout">d = 10^((m − M + 5) / 5) parsecs</p>
+      <h2>Formula quick reference</h2>
+      <div id="forms" class="mono" style="font-size:12px"></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-log">
+  <div class="grid" id="stats"></div>
+  <div class="panel" style="margin-top:12px"><h2>Mission control schedule</h2>
+    <div class="row"><input id="evn" placeholder="Test or deadline" style="width:240px"><input id="evd" type="date" style="width:170px"><button class="btn" id="eva">Add</button></div>
+    <div id="evl" class="mono" style="margin-top:10px"></div></div>
+</section>
+</main>
+</div>
+
+<div id="pal"><div class="box panel"><input id="pin" placeholder="Jump to a note, deck, or tool"><ul id="pul"></ul></div></div>
+
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const KEY='event-horizon-v1';
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+S=S||{notes:[{id:1,title:'Welcome aboard',tags:'start',body:'# Welcome\nThis is your first star. Edit it, tag it, and link it to others with shared tags.\n\nOrbital period: $T^2 \\propto a^3$',rev:1,last:Date.now()},
+{id:2,title:'Orbital mechanics',tags:'start,physics',body:'## Kepler\nEllipses, equal areas, $T^2\\propto a^3$.',rev:2,last:Date.now()}],
+cards:[],mins:0,days:[],events:[],nid:3,cid:1,theme:'cyan'};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook']];
+let cur='map',trail=[];
+
+$('#nav').innerHTML=VIEWS.map(v=>`<button data-v="${v[0]}">${v[1]}</button>`).join('');
+function go(v){cur=v;$$('.view').forEach(e=>e.classList.toggle('on',e.id=='v-'+v));$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
+ trail=trail.filter(t=>t!=v);trail.push(v);trail=trail.slice(-6);
+ $('#crumbs').innerHTML=trail.map((t,i)=>`<b data-v="${t}">SECTOR-${(VIEWS.findIndex(x=>x[0]==t)+1)*7}.${t}</b>`).join(' > ');
+ if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='map')sizeMap();if(v=='sand')resetSim();}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)go(b.dataset.v)});
+
+let ac,sfxOn=false,drone;
+function beep(f=520,d=.08){if(!sfxOn)return;ac=ac||new AudioContext();const o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;g.gain.value=.05;o.connect(g).connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+d);o.stop(ac.currentTime+d)}
+$('#sfx').onclick=()=>{sfxOn=!sfxOn;$('#sfx').textContent='Clicks: '+(sfxOn?'on':'off');ac=ac||new AudioContext();beep(700)};
+let mOn=false,mbus,mmaster,mTimer,mSp,mi=0;
+const CH=[[0,3,7,10],[5,8,12,15],[3,7,10,14],[7,10,14,17]];
+const hz=n=>146.83*Math.pow(2,n/12);
+function mnote(f,when,dur,type,vol){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;o.detune.value=(Math.random()-.5)*12;g.gain.setValueAtTime(0,when);g.gain.linearRampToValueAtTime(vol,when+dur*.4);g.gain.linearRampToValueAtTime(0,when+dur);o.connect(g).connect(mbus);o.start(when);o.stop(when+dur+.1)}
+function mInit(){ac=ac||new AudioContext();if(mbus)return;mmaster=ac.createGain();mmaster.gain.value=0;mmaster.connect(ac.destination);mbus=ac.createGain();const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=1500;const d=ac.createDelay(2),fb=ac.createGain(),wet=ac.createGain();d.delayTime.value=.55;fb.gain.value=.5;wet.gain.value=.5;mbus.connect(f);f.connect(mmaster);f.connect(d);d.connect(fb);fb.connect(d);d.connect(wet);wet.connect(mmaster)}
+function mstep(){if(!mOn)return;const t=ac.currentTime+.05,c=CH[mi++%CH.length];c.forEach(n=>mnote(hz(n-12),t,9,'sine',.06));c.forEach(n=>{if(Math.random()<.6)mnote(hz(n+(Math.random()<.5?12:0)),t+Math.random()*6,3+Math.random()*3,'triangle',.02)});mTimer=setTimeout(mstep,7000)}
+function mspark(){if(!mOn)return;const n=[12,15,17,19,22,24,27][Math.floor(Math.random()*7)];mnote(hz(n),ac.currentTime+.05,4,'sine',.045);mSp=setTimeout(mspark,2000+Math.random()*4000)}
+$('#mus').onclick=()=>{mOn=!mOn;$('#mus').textContent='Music: '+(mOn?'on':'off');mInit();
+ if(mOn){ac.resume();mmaster.gain.setTargetAtTime(+$('#mvol').value,ac.currentTime,.6);mi=0;mstep();mspark()}
+ else{clearTimeout(mTimer);clearTimeout(mSp);mmaster.gain.setTargetAtTime(0,ac.currentTime,.5)}};
+$('#mvol').oninput=()=>{if(mOn)mmaster.gain.setTargetAtTime(+$('#mvol').value,ac.currentTime,.1)};
+
+function theme(t){document.body.dataset.theme=t;$('#theme').value=t;S.theme=t;save()}
+$('#theme').onchange=e=>theme(e.target.value);theme(S.theme||'cyan');
+$('#hudb').onclick=()=>document.body.classList.add('hud');$('#hudx').onclick=()=>document.body.classList.remove('hud');
+
+const sky=$('#sky'),sx=sky.getContext('2d');let stars=[],mx=0,my=0;
+function sizeSky(){sky.width=innerWidth;sky.height=innerHeight;stars=Array.from({length:220},()=>({x:Math.random()*sky.width,y:Math.random()*sky.height,z:Math.random()*3+.3,t:Math.random()*6}))}
+addEventListener('resize',sizeSky);sizeSky();
+addEventListener('mousemove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
+const css=v=>getComputedStyle(document.body).getPropertyValue(v).trim();
+const streak=()=>{let n=0,d=new Date();while(S.days.includes(d.toDateString())){n++;d.setDate(d.getDate()-1)}return n};
+let meteors=[];
+(function skyLoop(){sx.clearRect(0,0,sky.width,sky.height);const c=css('--fg');sx.fillStyle=c;
+ stars.forEach(s=>{s.t+=.02;sx.globalAlpha=.3+.3*Math.sin(s.t)*.5+.2;const x=(s.x-mx*s.z*30+sky.width)%sky.width,y=(s.y-my*s.z*30+sky.height)%sky.height;sx.fillRect(x,y,s.z*.8,s.z*.8)});
+ if(Math.random()<Math.min(.01*streak(),.15))meteors.push({x:Math.random()*sky.width,y:0,l:60});
+ sx.strokeStyle=css('--ac');meteors=meteors.filter(m=>{m.x-=6;m.y+=6;m.l-=.6;sx.globalAlpha=.7;sx.beginPath();sx.moveTo(m.x,m.y);sx.lineTo(m.x+m.l,m.y-m.l);sx.stroke();return m.y<sky.height});
+ sx.globalAlpha=1;requestAnimationFrame(skyLoop)})();
+
+const nb=$('#neb'),nx=nb.getContext('2d');let blobs=[];
+function sizeNeb(){nb.width=Math.ceil(innerWidth/4);nb.height=Math.ceil(innerHeight/4);blobs=Array.from({length:8},(_,i)=>({x:Math.random(),y:Math.random(),r:.22+Math.random()*.3,p:Math.random()*6,s:.00012+Math.random()*.0003,c:i%3}))}
+addEventListener('resize',sizeNeb);sizeNeb();
+(function nebLoop(t){nx.globalCompositeOperation='source-over';nx.clearRect(0,0,nb.width,nb.height);nx.globalCompositeOperation='lighter';const cols=[css('--ac'),css('--ac2'),css('--n3')];
+blobs.forEach(b=>{const x=(b.x+Math.sin(t*b.s+b.p)*.14)*nb.width,y=(b.y+Math.cos(t*b.s*1.3+b.p)*.12)*nb.height,r=b.r*Math.max(nb.width,nb.height),g=nx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,cols[b.c]+'4d');g.addColorStop(.5,cols[b.c]+'1f');g.addColorStop(1,cols[b.c]+'00');nx.fillStyle=g;nx.fillRect(0,0,nb.width,nb.height)});requestAnimationFrame(nebLoop)})(0);
+
+const map=$('#map'),mc=map.getContext('2d');let nodes=[];
+function sizeMap(){map.width=map.clientWidth;map.height=map.clientHeight}
+addEventListener('resize',()=>{if(cur=='map')sizeMap()});
+function mastery(n){const age=(Date.now()-n.last)/864e5;return Math.max(.15,Math.min(1,(n.rev/8)*Math.exp(-age/30)+.15))}
+function layout(){const W=map.width,H=map.height;nodes=S.notes.map((n,i)=>{const a=i*2.4,r=40+Math.sqrt(i+1)*Math.min(W,H)*.12;return{n,x:W/2+Math.cos(a)*r,y:H/2+Math.sin(a)*r*.75}})}
+(function mapLoop(){if(cur=='map'&&map.width){if(nodes.length!=S.notes.length)layout();mc.clearRect(0,0,map.width,map.height);
+ const tags={};nodes.forEach(o=>o.n.tags.split(',').map(t=>t.trim()).filter(Boolean).forEach(t=>(tags[t]=tags[t]||[]).push(o)));
+ const pal=['#b58cff','#ff7ad9','#7cf0ff','#ffc04d','#7cff9e'];Object.keys(tags).forEach((t,i)=>{const g=tags[t];const cx=g.reduce((a,o)=>a+o.x,0)/g.length,cy=g.reduce((a,o)=>a+o.y,0)/g.length;const gr=mc.createRadialGradient(cx,cy,0,cx,cy,110);gr.addColorStop(0,pal[i%5]+'33');gr.addColorStop(1,'transparent');mc.fillStyle=gr;mc.fillRect(cx-110,cy-110,220,220);
+  mc.strokeStyle=css('--ac');mc.globalAlpha=.45;for(let a=0;a<g.length;a++)for(let b=a+1;b<g.length;b++){mc.beginPath();mc.moveTo(g[a].x,g[a].y);mc.lineTo(g[b].x,g[b].y);mc.stroke()}mc.globalAlpha=1;mc.fillStyle=pal[i%5];mc.font='11px JetBrains Mono';mc.fillText('#'+t,cx-20,cy-90)});
+ nodes.forEach(o=>{const m=mastery(o.n),r=3+m*10;mc.shadowColor=css('--ac');mc.shadowBlur=8+m*24;mc.fillStyle=css('--fg');mc.globalAlpha=.35+m*.65;mc.beginPath();mc.arc(o.x,o.y,r,0,7);mc.fill();mc.shadowBlur=0;mc.globalAlpha=1;mc.font='12px Space Grotesk';mc.fillText(o.n.title,o.x+r+4,o.y+4)})}
+ requestAnimationFrame(mapLoop)})();
+map.onclick=e=>{const r=map.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;const h=nodes.find(o=>Math.hypot(o.x-x,o.y-y)<18);if(h){h.n.rev++;h.n.last=Date.now();save();open_(h.n.id)}};
+
+let nid=S.notes[0]?.id;
+const note=()=>S.notes.find(n=>n.id==nid);
+function open_(id){nid=id;go('notes')}
+function md(t){let h=t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+ const k=(s,d)=>{try{return window.katex?katex.renderToString(s,{displayMode:d,throwOnError:false}):s}catch(e){return s}};
+ h=h.replace(/\$\$([\s\S]+?)\$\$/g,(_,s)=>k(s,true)).replace(/\$([^$\n]+)\$/g,(_,s)=>k(s,false));
+ return h.replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\n/g,'<br>')}
+function renderNotes(){$('#nsel').innerHTML=S.notes.map(n=>`<option value="${n.id}" ${n.id==nid?'selected':''}>${n.title||'Untitled'}</option>`).join('');const n=note();if(!n)return;$('#ntitle').value=n.title;$('#ntags').value=n.tags;$('#nbody').value=n.body;$('#prev').innerHTML=md(n.body)}
+$('#nsel').onchange=e=>{nid=+e.target.value;renderNotes()};
+$('#nnew').onclick=()=>{S.notes.push({id:S.nid,title:'New note',tags:'',body:'',rev:0,last:Date.now()});nid=S.nid++;save();renderNotes()};
+$('#ndel').onclick=()=>{if(S.notes.length>1&&confirm('Delete this note?')){S.notes=S.notes.filter(n=>n.id!=nid);nid=S.notes[0].id;save();renderNotes()}};
+['ntitle','ntags','nbody'].forEach(i=>$('#'+i).oninput=()=>{const n=note();n.title=$('#ntitle').value;n.tags=$('#ntags').value;n.body=$('#nbody').value;n.last=Date.now();$('#prev').innerHTML=md(n.body);save();nodes=[]});
+$('#nexp').onclick=()=>{const n=note(),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([`# ${n.title}\n\n${n.body}`],{type:'text/markdown'}));a.download=(n.title||'note')+'.md';a.click()};
+
+let showA=false,curCard=null;
+const dueCards=()=>S.cards.filter(c=>c.due<=Date.now()).sort((a,b)=>a.due-b.due);
+function renderCards(){const d=dueCards();curCard=d[0]||null;showA=false;$('#due').textContent=`${d.length} due, ${S.cards.length} total`;
+ const el=$('#card');el.className='panel card';
+ if(!curCard){el.textContent=S.cards.length?'All caught up. Next review is scheduled.':'No cards yet. Add one on the right.';$('#grade').style.visibility='hidden'}
+ else{el.textContent=curCard.q;$('#grade').style.visibility='hidden';if(Date.now()-curCard.due>864e5)el.classList.add('crit')}
+ $('#clist').innerHTML=S.cards.slice(-6).map(c=>`<div>${c.q} <span class="tag">next ${new Date(c.due).toLocaleDateString()}</span></div>`).join('')}
+$('#card').onclick=()=>{if(!curCard)return;showA=!showA;const el=$('#card');el.textContent=showA?curCard.a:curCard.q;el.classList.remove('scan');void el.offsetWidth;el.classList.add('scan');beep(900,.15);$('#grade').style.visibility=showA?'visible':'hidden'};
+$$('#grade button').forEach(b=>b.onclick=()=>{const q=+b.dataset.q,c=curCard;
+ if(q<3){c.reps=0;c.int=1}else{c.int=c.reps==0?1:c.reps==1?6:Math.round(c.int*c.ef);c.reps++}
+ c.ef=Math.max(1.3,c.ef+(.1-(5-q)*(.08+(5-q)*.02)));c.due=Date.now()+(q<3?6e4*10:c.int*864e5);save();beep(q>3?660:300);renderCards()});
+$('#cadd').onclick=()=>{const q=$('#cq').value.trim(),a=$('#ca').value.trim();if(!q||!a)return;S.cards.push({id:S.cid++,q,a,ef:2.5,int:0,reps:0,due:Date.now()});$('#cq').value=$('#ca').value='';save();renderCards()};
+
+const oc=$('#orbit'),ox=oc.getContext('2d');let tl=1500,total=1500,run=null,brk=false;
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+function drawOrbit(){ox.clearRect(0,0,320,320);const p=1-tl/total,ang=p*Math.PI*2-Math.PI/2;ox.strokeStyle=css('--dim');ox.lineWidth=1;ox.beginPath();ox.arc(160,160,110,0,7);ox.stroke();
+ ox.strokeStyle=css('--ac');ox.lineWidth=3;ox.beginPath();ox.arc(160,160,110,-Math.PI/2,ang);ox.stroke();
+ const g=ox.createRadialGradient(160,160,5,160,160,45);g.addColorStop(0,css('--ac2'));g.addColorStop(1,css('--bg'));ox.fillStyle=g;ox.beginPath();ox.arc(160,160,42,0,7);ox.fill();
+ const x=160+Math.cos(ang)*110,y=160+Math.sin(ang)*110;ox.save();ox.translate(x,y);ox.rotate(ang+Math.PI/2);ox.fillStyle=css('--fg');ox.beginPath();ox.moveTo(0,-9);ox.lineTo(6,7);ox.lineTo(-6,7);ox.fill();ox.restore();$('#clock').textContent=fmt(tl)}
+function setPhase(b){brk=b;total=tl=(b?+$('#tb').value:+$('#tf').value)*60;theme(b?'gold':(S.pre||'cyan'));$('#tmode').textContent=b?'Solar flare rest protocol. Step away.':'Focus orbit in progress.'}
+$('#tgo').onclick=()=>{if(run){clearInterval(run);run=null;$('#tgo').textContent='Resume';return}
+ if(!brk&&tl==total){S.pre=document.body.dataset.theme=='gold'?'cyan':document.body.dataset.theme;setPhase(false)}
+ $('#tgo').textContent='Pause';run=setInterval(()=>{tl--;if(tl<=0){beep(1000,.4);if(!brk){S.mins+=+$('#tf').value;const d=new Date().toDateString();if(!S.days.includes(d))S.days.push(d);save()}setPhase(!brk)}drawOrbit()},1000)};
+$('#trst').onclick=()=>{clearInterval(run);run=null;$('#tgo').textContent='Start focus';theme(S.pre||S.theme);brk=false;total=tl=+$('#tf').value*60;$('#tmode').textContent='Ready for departure.';drawOrbit()};
+total=tl=1500;drawOrbit();
+
+const sc=$('#sim'),sc2=sc.getContext('2d');let probe=null,trailP=[];
+function resetSim(){sc.width=sc.clientWidth;sc.height=sc.clientHeight;$('#mv').textContent=$('#sm').value;$('#dv').textContent=$('#sd').value;$('#vv').textContent=$('#sv').value;launch()}
+function launch(){probe={x:+$('#sd').value,y:0,vx:0,vy:+$('#sv').value};trailP=[]}
+['sm','sd','sv'].forEach(i=>$('#'+i).oninput=resetSim);$('#sgo').onclick=launch;
+(function simLoop(){if(cur=='sand'&&probe&&sc.width){const M=+$('#sm').value,k=M*.08;for(let i=0;i<4;i++){const r=Math.hypot(probe.x,probe.y)||1,a=k/(r*r);probe.vx-=a*probe.x/r*.25;probe.vy-=a*probe.y/r*.25;probe.x+=probe.vx*.25;probe.y+=probe.vy*.25}
+ trailP.push([probe.x,probe.y]);if(trailP.length>900)trailP.shift();const W=sc.width,H=sc.height,s=Math.min(W,H)/420;sc2.clearRect(0,0,W,H);
+ const g=sc2.createRadialGradient(W/2,H/2,0,W/2,H/2,18);g.addColorStop(0,css('--ac2'));g.addColorStop(1,'transparent');sc2.fillStyle=g;sc2.beginPath();sc2.arc(W/2,H/2,18,0,7);sc2.fill();
+ sc2.strokeStyle=css('--ac');sc2.beginPath();trailP.forEach((p,i)=>i?sc2.lineTo(W/2+p[0]*s,H/2+p[1]*s):sc2.moveTo(W/2+p[0]*s,H/2+p[1]*s));sc2.stroke();
+ sc2.fillStyle=css('--fg');sc2.beginPath();sc2.arc(W/2+probe.x*s,H/2+probe.y*s,4,0,7);sc2.fill()}requestAnimationFrame(simLoop)})();
+function calc(){const m=parseFloat($('#mm').value),M=parseFloat($('#mM').value);$('#mout').textContent=isNaN(m)||isNaN(M)?'d = 10^((m − M + 5) / 5) parsecs':`μ = ${(m-M).toFixed(2)}, d = ${Math.pow(10,(m-M+5)/5).toFixed(2)} pc`}
+$('#mm').oninput=$('#mM').oninput=calc;
+const F=[['Kepler III','T^2=\\frac{4\\pi^2}{GM}a^3'],['Gravity','F=\\frac{GMm}{r^2}'],['Distance modulus','m-M=5\\log_{10}d-5'],['Escape velocity','v=\\sqrt{\\frac{2GM}{r}}'],['Mass-energy','E=mc^2']];
+$('#forms').innerHTML=F.map(f=>`<div>${f[0]} <button class="btn" style="padding:2px 8px" data-copy="${f[1].replace(/\\/g,'&#92;')}">Copy LaTeX</button></div>`).join('');
+$('#forms').onclick=e=>{const b=e.target.closest('[data-copy]');if(b){navigator.clipboard?.writeText(b.dataset.copy);b.textContent='Copied';setTimeout(()=>b.textContent='Copy LaTeX',1200)}};
+
+function renderLog(){const mastered=S.cards.filter(c=>c.reps>=3).length,sn=streak();
+ const score=Math.min(100,Math.round(S.mins/6+mastered*4+S.notes.length*2+sn*3));
+ $('#stats').innerHTML=[['Focused minutes',S.mins],['Day streak',sn],['Cards mastered',mastered],['Notes written',S.notes.length],['Mission readiness',score+'%']].map(s=>`<div class="panel"><div class="tag">${s[0]}</div><div class="stat">${s[1]}</div></div>`).join('');
+ $('#evl').innerHTML=S.events.sort((a,b)=>a.d.localeCompare(b.d)).map((e,i)=>{const dl=Math.ceil((new Date(e.d)-new Date().setHours(0,0,0,0))/864e5);return`<div>T${dl>=0?'-':'+'}${Math.abs(dl)} days  ${e.n} <button class="btn" data-del="${i}" style="padding:1px 8px">Remove</button></div>`}).join('')||'No launches scheduled. Add a test date above.'}
+$('#eva').onclick=()=>{const n=$('#evn').value.trim(),d=$('#evd').value;if(n&&d){S.events.push({n,d});$('#evn').value='';save();renderLog()}};
+$('#evl').onclick=e=>{const b=e.target.closest('[data-del]');if(b){S.events.splice(+b.dataset.del,1);save();renderLog()}};
+
+let sel=0,items=[];
+function palRender(){const q=$('#pin').value.toLowerCase();items=[...VIEWS.map(v=>({t:'Go to '+v[1],f:()=>go(v[0])})),...S.notes.map(n=>({t:'Note: '+n.title,f:()=>open_(n.id)})),...S.cards.map(c=>({t:'Card: '+c.q,f:()=>go('cards')}))].filter(i=>i.t.toLowerCase().includes(q)).slice(0,30);sel=Math.min(sel,Math.max(items.length-1,0));$('#pul').innerHTML=items.map((it,i)=>`<li class="${i==sel?'sel':''}" data-i="${i}">${it.t}</li>`).join('')||'<li>No matches.</li>'}
+function pal(on){$('#pal').classList.toggle('on',on);if(on){$('#pin').value='';palRender();$('#pin').focus()}}
+$('#palb').onclick=()=>pal(true);$('#pin').oninput=palRender;
+$('#pul').onclick=e=>{const l=e.target.closest('[data-i]');if(l){pal(false);items[+l.dataset.i].f()}};
+$('#pal').onclick=e=>{if(e.target.id=='pal')pal(false)};
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()=='k'){e.preventDefault();pal(!$('#pal').classList.contains('on'))}
+ else if($('#pal').classList.contains('on')){if(e.key=='Escape')pal(false);if(e.key=='ArrowDown'){sel=Math.min(sel+1,items.length-1);palRender()}if(e.key=='ArrowUp'){sel=Math.max(sel-1,0);palRender()}if(e.key=='Enter'&&items[sel]){pal(false);items[sel].f()}}
+ else if(e.key=='Escape')document.body.classList.remove('hud')});
+
+go('map');
+</script>
+</body>
+</html>
