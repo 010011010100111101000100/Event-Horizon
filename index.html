@@ -93,8 +93,23 @@ main.sp{display:grid;grid-template-columns:1fr 1fr;gap:12px}main.sp .view.on2{di
 @keyframes sp{to{transform:rotate(360deg)}}
 .keys{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.keys .btn{text-align:center;padding:10px 4px}
 #stabs .btn.on{border-color:var(--ac);color:var(--ac);box-shadow:0 0 12px color-mix(in srgb,var(--ac) 40%,transparent)}
+
+.view{position:relative}
+#toc{position:absolute;right:24px;top:110px;width:190px;max-height:45%;overflow:auto;z-index:3;padding:8px}
+#kb{display:none;position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.6);place-content:center}#kb.on{display:grid}
+[data-theme=amber]{--bg:#0b0600;--fg:#ffb000;--dim:#8a5d00;--ac:#ffb000;--ac2:#ff7a00;--n3:#ffd24d;--glass:rgba(40,22,0,.6)}
+[data-theme=green]{--bg:#000a03;--fg:#33ff66;--dim:#1f8a3a;--ac:#33ff66;--ac2:#00cc99;--n3:#99ff33;--glass:rgba(0,30,10,.6)}
+[data-theme=navy]{--bg:#020818;--fg:#cfe0ff;--dim:#5d7099;--ac:#5aa0ff;--ac2:#3d6bff;--n3:#00c2ff;--glass:rgba(4,16,48,.6)}
+[data-theme=light]{--bg:#f3f6fb;--fg:#0f1a2e;--dim:#5a6a85;--ac:#0a6cff;--ac2:#6a3dff;--n3:#d6336c;--warn:#c92a2a;--glass:rgba(255,255,255,.78)}
+[data-theme=light] #neb{display:none}[data-theme=light] input,[data-theme=light] textarea,[data-theme=light] select{background:rgba(255,255,255,.9)}
+@media print{body{background:#fff!important;color:#000!important;overflow:visible!important}
+#sky,#neb,#load,header,nav,.btn,#stabs,#ltx,#toc,#wc,#hudx,#cli,#pal,#kb,#emg,.view:not(#v-notes),#v-notes>.row,#v-notes .split>.panel:first-child{display:none!important}
+html,body,.shell{height:auto!important;display:block!important}main{overflow:visible!important;padding:0!important}#v-notes{display:block!important;height:auto!important}
+.split{display:block!important;height:auto!important}.panel{background:none!important;border:0!important;clip-path:none!important;backdrop-filter:none!important;padding:0!important;font:12pt Georgia,serif}
+#prev,#prev *{color:#000!important;background:none!important;text-shadow:none!important}#prev .code{border:1px solid #999;box-shadow:none}}
 </style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/nerdamer.core.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Algebra.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Calculus.js"></script>
+<link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#04030f"><link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body data-theme="cyan">
 <div id="load"><div class="orb"><i></i><i></i><i></i></div><h1>Event Horizon</h1><div class="tag mono" id="ldt">Powering up</div><div class="bar" style="width:220px"><div id="ldb"></div></div></div>
@@ -106,7 +121,7 @@ main.sp{display:grid;grid-template-columns:1fr 1fr;gap:12px}main.sp .view.on2{di
   <h1>Event Horizon<small>Deep Space Academic Station</small></h1>
   <div id="crumbs"></div>
   <select id="theme" style="width:auto" aria-label="Spectral filter">
-    <option value="cyan">Cyber Cyan</option><option value="void">Deep Void</option><option value="violet">Nebula Violet</option><option value="red">Night Vision Red</option>
+    <option value="cyan">Cyber Cyan</option><option value="void">Deep Void</option><option value="violet">Nebula Violet</option><option value="red">Night Vision Red</option><option value="amber">Phosphor Amber CRT</option><option value="green">Matrix Green</option><option value="navy">Deep Void Navy</option><option value="light">Scientific Light</option>
   </select>
   <button class="btn" id="sfx">Clicks: off</button>
   <button class="btn" id="mus">Music: off</button>
@@ -117,19 +132,21 @@ main.sp{display:grid;grid-template-columns:1fr 1fr;gap:12px}main.sp .view.on2{di
 </header>
 <nav id="nav"></nav>
 <main>
-<section class="view" id="v-map"><canvas id="map"></canvas><div id="hint">Click a star to open the note. Brighter stars are notes you review often. Matching tags draw constellation lines.</div></section>
+<section class="view" id="v-map"><canvas id="map"></canvas><div id="hint">Arrow keys move between stars, Enter opens a note, or click a star. Brighter stars are notes you review often. Matching tags draw constellation lines.</div></section>
 
 <section class="view" id="v-notes">
   <div id="stabs" class="row" style="margin-bottom:10px"></div>
   <div class="row" style="margin-bottom:10px">
     <select id="nsel" style="width:200px"></select>
-    <button class="btn" id="nnew">New note</button><button class="btn" id="ndel">Delete</button><button class="btn" id="nexp">Export .md</button>
+    <button class="btn" id="nnew">New note</button><button class="btn" id="ndel">Delete</button><button class="btn" id="nexp">Export .md</button><button class="btn" id="nprint">Print / save PDF</button>
     <span class="tag">Markdown + LaTeX: $E=mc^2$ or $$...$$</span>
   </div>
   <div class="split">
-    <div class="panel"><input id="ntitle" placeholder="Note title"><input id="ntags" placeholder="tags, comma separated" style="margin:8px 0"><textarea id="nbody" style="height:calc(100% - 90px)" placeholder="Write here."></textarea></div>
+    <div class="panel"><div class="row" id="ltx" style="margin-bottom:6px"></div><input id="ntitle" placeholder="Note title"><input id="ntags" placeholder="tags, comma separated" style="margin:8px 0"><textarea id="nbody" style="height:calc(100% - 150px)" placeholder="Write here."></textarea></div>
     <div class="panel" id="prev"></div>
   </div>
+  <details id="toc" class="panel" open><summary>Contents</summary><div id="tocl" class="mono tag"></div></details>
+  <div class="tag mono" id="wc" style="margin-top:6px"></div>
 </section>
 
 <section class="view" id="v-cards">
@@ -245,14 +262,25 @@ print(math.sqrt(2))</textarea><div class="row" style="margin:8px 0"><button clas
  <div class="panel"><h2>Station systems</h2><div class="row"><label class="tag">Split with <select id="spl"></select></label><label class="tag">Binaural <select id="bin"><option value="0">Off</option><option value="10">Alpha 10 Hz</option><option value="6">Theta 6 Hz</option></select></label></div>
   <div class="row" style="margin-top:10px"><button class="btn" id="voice">Voice: off</button><label class="tag"><input type="checkbox" id="lockd" style="width:auto"> Distraction lockdown</label></div>
   <div class="row" style="margin-top:10px"><button class="btn" id="jexp">Export station JSON</button><label class="btn">Import station<input type="file" id="jimp" accept=".json" hidden></label><button class="btn" id="prn">Print current note</button></div></div>
+ <div class="panel"><h2>Starfield physics</h2><label class="tag">Stars</label><input type="range" id="sfn" min="40" max="700" value="220"><label class="tag">Parallax drift</label><input type="range" id="sfd" min="0" max="90" value="30"><label class="tag">Twinkle</label><input type="range" id="sft" min="0" max="0.1" step="0.005" value="0.02"><div class="row" style="margin-top:10px"><button class="btn" id="kiosk">Kiosk mode</button><button class="btn" id="chm">Test chimes</button></div></div>
  <div class="panel"><h2>Keyboard shortcuts</h2><div class="mono tag">Ctrl/Cmd+K  command palette<br>~  terminal CLI<br>Esc  close overlays and leave HUD<br>Click card  flip<br>CLI: orbit focus 25, node create "Physics", open stats, theme red</div></div>
 </div></section>
 <section class="view" id="v-calc"><div class="panel" style="max-width:440px"><h2>Scientific calculator</h2><input id="cx" class="mono" placeholder="sin(30)+2^3, logb(8,2), 5!" style="font-size:18px"><div class="stat mono" id="cr2">= 0</div><div class="tag mono" id="cb"></div><div class="row" style="margin:8px 0"><button class="btn" id="cdeg"></button></div><div class="keys" id="keys"></div><div class="mono tag" id="chs" style="margin-top:10px"></div></div></section>
+
+<section class="view" id="v-suite"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
+ <div class="panel"><h2>Argand diagram</h2><div class="row"><input id="z1r" type="number" value="2" step="0.5" title="Re z1" style="width:22%"><input id="z1i" type="number" value="1" step="0.5" title="Im z1" style="width:22%"><input id="z2r" type="number" value="1" step="0.5" title="Re z2" style="width:22%"><input id="z2i" type="number" value="2" step="0.5" title="Im z2" style="width:22%"></div>
+  <div class="row" style="margin:6px 0"><select id="zop" style="width:50%"><option value="add">z1 + z2</option><option value="mul">z1 × z2</option><option value="root">nth roots of z1</option></select><input id="zn" type="number" value="3" min="1" title="n" style="width:20%"></div><div class="tag">Re z1, Im z1, Re z2, Im z2. Use z1 = 1 for roots of unity.</div>
+  <canvas id="acv" width="300" height="300" style="width:100%;max-width:300px"></canvas><p class="mono tag" id="ao" style="white-space:pre-wrap"></p></div>
+ <div class="panel"><h2>Geometry sketchpad</h2><div class="row"><select id="gmd" style="width:55%"><option value="point">Point</option><option value="line">Line (two points)</option><option value="circle">Circle (center, edge)</option></select><button class="btn" id="gclr">Clear</button></div><canvas id="gcv2" width="400" height="300" style="width:100%;margin-top:6px"></canvas><p class="mono tag" id="gio" style="white-space:pre-wrap"></p></div>
+ <div class="panel"><h2>Keplerian elements</h2><div class="row"><input id="ka" type="number" value="7000" title="Semi-major axis km" style="width:30%"><input id="ke" type="number" value="0.1" step="0.01" title="Eccentricity" style="width:30%"><input id="knu" type="number" value="0" title="True anomaly deg" style="width:30%"><input id="kmu" type="number" value="398600.4418" title="mu km3/s2" style="width:48%"><input id="krp" type="number" placeholder="perigee km" style="width:24%"><input id="kra" type="number" placeholder="apogee km" style="width:24%"></div><div class="tag">a km, e, true anomaly °, μ km³/s² (Earth by default). Fill perigee and apogee to compute a and e.</div><p class="mono tag" id="ko" style="white-space:pre-wrap"></p></div>
+ <div class="panel"><h2>Lunar phase engine</h2><input id="lud" type="date" style="width:180px"><div class="row"><canvas id="mcv2" width="120" height="120"></canvas><p class="mono tag" id="luo" style="white-space:pre-wrap"></p></div><div class="mono tag" id="lul" style="white-space:pre-wrap"></div></div>
+</div></section>
 </main>
 </div>
 
 <div id="emg"><div class="tag">Emergency thrusters engaged</div><div class="stat mono" id="emgn"></div><div class="stat mono" id="emgc" style="font-size:54px"></div><div class="mono" id="emgt" style="font-size:28px"></div><button class="btn" id="emgx" style="margin-top:20px">Stand down</button></div>
 <div id="cli"><div class="panel"><pre id="cout" class="mono tag"></pre><input id="cin" placeholder="help"></div></div>
+<div id="kb"><div class="panel"><h2>Hotkeys</h2><div class="mono tag" style="line-height:1.9">Ctrl/Cmd+K  command palette<br>~  terminal CLI<br>?  this sheet<br>Arrow keys  move between stars on the starmap<br>Enter  open the selected star's note<br>Esc  close overlays, leave HUD<br>Click a card  flip it<br>Enter in calculator  evaluate</div></div></div>
 <div id="pal"><div class="box panel"><input id="pin" placeholder="Jump to a note, deck, or tool"><ul id="pul"></ul></div></div>
 
 <script>
@@ -264,17 +292,18 @@ S=S||{notes:[{id:1,title:'Welcome aboard',tags:'start',body:'# Welcome\nThis is 
 {id:2,title:'Orbital mechanics',tags:'start,physics',body:'## Kepler\nEllipses, equal areas, $T^2\\propto a^3$.',rev:2,last:Date.now()}],
 cards:[],mins:0,days:[],events:[],nid:3,cid:1,theme:'cyan'};
 S.hr=S.hr||Array(24).fill(0);S.log=S.log||[];S.ent=S.ent||0;S.cons=S.cons||0;S.badges=S.badges||0;
+let rcv=false;const bc=window.BroadcastChannel?new BroadcastChannel('eh-sync'):null;
 let db;const rq=indexedDB.open('eh',1);rq.onupgradeneeded=()=>rq.result.createObjectStore('s');
 rq.onsuccess=()=>{db=rq.result;try{const r=db.transaction('s').objectStore('s').get('S');r.onsuccess=()=>{if(!localStorage.getItem(KEY)&&r.result){localStorage.setItem(KEY,JSON.stringify(r.result));location.reload()}}}catch(e){}};
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}try{db&&db.transaction('s','readwrite').objectStore('s').put(JSON.parse(JSON.stringify(S)),'S')}catch(e){}};
-const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook'],['stats','Mission metrics'],['rank','Pilot ranks'],['astro','Astro tools'],['live','Deep space feed'],['math','Math engine'],['lab','Orbital lab'],['code','Code lab'],['cfg','Station config'],['calc','Calculator']];
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}if(bc&&!rcv)try{bc.postMessage(S)}catch(e){}try{db&&db.transaction('s','readwrite').objectStore('s').put(JSON.parse(JSON.stringify(S)),'S')}catch(e){}};
+const VIEWS=[['map','Starmap'],['notes','Notes'],['cards','Pulsar cards'],['timer','Focus timer'],['sand','Astrolabe lab'],['log','Pilot logbook'],['stats','Mission metrics'],['rank','Pilot ranks'],['astro','Astro tools'],['live','Deep space feed'],['math','Math engine'],['lab','Orbital lab'],['code','Code lab'],['cfg','Station config'],['calc','Calculator'],['suite','Geometry & orbits']];
 let cur='map',trail=[];
 
 $('#nav').innerHTML=VIEWS.map(v=>`<button data-v="${v[0]}">${v[1]}</button>`).join('');
 function go(v){if(run&&$('#zen').checked&&v!='timer'){$('#tmode').textContent='Zenith lockout active until this warp cycle ends.';return}cur=v;S.view=v;$$('.view').forEach(e=>{e.classList.toggle('on',e.id=='v-'+v);e.classList.toggle('on2',!!S.split&&S.split!=v&&e.id=='v-'+S.split)});$('main').classList.toggle('sp',!!S.split&&S.split!=v);$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v==v));
  trail=trail.filter(t=>t!=v);trail.push(v);trail=trail.slice(-6);
  $('#crumbs').innerHTML=trail.map((t,i)=>`<b data-v="${t}">SECTOR-${(VIEWS.findIndex(x=>x[0]==t)+1)*7}.${t}</b>`).join(' > ');
- if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='stats')renderStats();if(v=='rank'){renderRank();renderTM()}if(v=='math'){mat();graph()}if(v=='lab'){lag();dop();dvc()}if(v=='code')vaultR();if(v=='live')liveInit();if(v=='map')sizeMap();if(v=='sand')resetSim();}
+ if(v=='notes')renderNotes();if(v=='cards')renderCards();if(v=='log')renderLog();if(v=='stats')renderStats();if(v=='rank'){renderRank();renderTM()}if(v=='math'){mat();graph()}if(v=='lab'){lag();dop();dvc()}if(v=='code')vaultR();if(v=='live')liveInit();if(v=='suite'){arg();geoDraw();kep();lun()}if(v=='map')sizeMap();if(v=='sand')resetSim();}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)go(b.dataset.v)});
 
 let ac,sfxOn=false,drone;
@@ -297,14 +326,15 @@ $('#theme').onchange=e=>theme(e.target.value);theme(S.theme||'cyan');
 $('#hudb').onclick=()=>document.body.classList.add('hud');$('#hudx').onclick=()=>document.body.classList.remove('hud');
 
 const sky=$('#sky'),sx=sky.getContext('2d');let stars=[],mx=0,my=0;
-function sizeSky(){sky.width=innerWidth;sky.height=innerHeight;stars=Array.from({length:220},()=>({x:Math.random()*sky.width,y:Math.random()*sky.height,z:Math.random()*3+.3,t:Math.random()*6}))}
+const SF=Object.assign({n:220,d:30,t:.02},S.sf||{});
+function sizeSky(){sky.width=innerWidth;sky.height=innerHeight;stars=Array.from({length:SF.n},()=>({x:Math.random()*sky.width,y:Math.random()*sky.height,z:Math.random()*3+.3,t:Math.random()*6}))}
 addEventListener('resize',sizeSky);sizeSky();
 addEventListener('mousemove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5});
 const css=v=>getComputedStyle(document.body).getPropertyValue(v).trim();
 const streak=()=>{let n=0,d=new Date();while(S.days.includes(d.toDateString())){n++;d.setDate(d.getDate()-1)}return n};
 let meteors=[];
 (function skyLoop(){sx.clearRect(0,0,sky.width,sky.height);const c=css('--fg');sx.fillStyle=c;
- stars.forEach(s=>{s.t+=.02;sx.globalAlpha=.3+.3*Math.sin(s.t)*.5+.2;const x=(s.x-mx*s.z*30+sky.width)%sky.width,y=(s.y-my*s.z*30+sky.height)%sky.height;sx.fillRect(x,y,s.z*.8,s.z*.8)});
+ stars.forEach(s=>{s.t+=SF.t;sx.globalAlpha=.3+.3*Math.sin(s.t)*.5+.2;const x=(s.x-mx*s.z*SF.d+sky.width)%sky.width,y=(s.y-my*s.z*SF.d+sky.height)%sky.height;sx.fillRect(x,y,s.z*.8,s.z*.8)});
  if(Math.random()<Math.min(.01*streak(),.15))meteors.push({x:Math.random()*sky.width,y:0,l:60});
  sx.strokeStyle=css('--ac');meteors=meteors.filter(m=>{m.x-=6;m.y+=6;m.l-=.6;sx.globalAlpha=.7;sx.beginPath();sx.moveTo(m.x,m.y);sx.lineTo(m.x+m.l,m.y-m.l);sx.stroke();return m.y<sky.height});
  sx.globalAlpha=1;requestAnimationFrame(skyLoop)})();
@@ -320,13 +350,13 @@ function sizeMap(){map.width=map.clientWidth;map.height=map.clientHeight}
 addEventListener('resize',()=>{if(cur=='map')sizeMap()});
 function mastery(n){const age=(Date.now()-n.last)/864e5;return Math.max(.15,Math.min(1,(n.rev/8)*Math.exp(-age/30)+.15))}
 function layout(){const W=map.width,H=map.height;nodes=S.notes.map((n,i)=>{const a=i*2.4,r=40+Math.sqrt(i+1)*Math.min(W,H)*.12;return{n,x:W/2+Math.cos(a)*r,y:H/2+Math.sin(a)*r*.75}})}
-(function mapLoop(){if(cur=='map'&&map.width){if(nodes.length!=S.notes.length)layout();mc.clearRect(0,0,map.width,map.height);
+(function mapLoop(){if(cur=='map'&&map.width){if(nodes.length!=S.notes.length)layout();mc.clearRect(0,0,map.width,map.height);easeCam();mc.save();mc.translate(cam.x,cam.y);
  const tags={};nodes.forEach(o=>(o.n.tags+','+(o.n.subj||'General')).split(',').map(t=>t.trim()).filter(Boolean).forEach(t=>(tags[t]=tags[t]||[]).push(o)));
  const pal=['#b58cff','#ff7ad9','#7cf0ff','#ffc04d','#7cff9e'];Object.keys(tags).forEach((t,i)=>{const g=tags[t];const cx=g.reduce((a,o)=>a+o.x,0)/g.length,cy=g.reduce((a,o)=>a+o.y,0)/g.length;const gr=mc.createRadialGradient(cx,cy,0,cx,cy,110);gr.addColorStop(0,pal[i%5]+'33');gr.addColorStop(1,'transparent');mc.fillStyle=gr;mc.fillRect(cx-110,cy-110,220,220);
   mc.strokeStyle=css('--ac');mc.globalAlpha=.45;for(let a=0;a<g.length;a++)for(let b=a+1;b<g.length;b++){mc.beginPath();mc.moveTo(g[a].x,g[a].y);mc.lineTo(g[b].x,g[b].y);mc.stroke()}mc.globalAlpha=1;mc.fillStyle=pal[i%5];mc.font='11px JetBrains Mono';mc.fillText('#'+t,cx-20,cy-90)});
- nodes.forEach(o=>{const m=mastery(o.n),r=3+m*10;mc.shadowColor=css('--ac');mc.shadowBlur=8+m*24;mc.fillStyle=css('--fg');mc.globalAlpha=.35+m*.65;mc.beginPath();mc.arc(o.x,o.y,r,0,7);mc.fill();mc.shadowBlur=0;mc.globalAlpha=1;mc.font='12px Space Grotesk';mc.fillText(o.n.title,o.x+r+4,o.y+4)})}
+ nodes.forEach(o=>{const m=mastery(o.n),r=3+m*10;mc.shadowColor=css('--ac');mc.shadowBlur=8+m*24;mc.fillStyle=css('--fg');mc.globalAlpha=.35+m*.65;mc.beginPath();mc.arc(o.x,o.y,r,0,7);mc.fill();mc.shadowBlur=0;mc.globalAlpha=1;mc.font='12px Space Grotesk';mc.fillText(o.n.title,o.x+r+4,o.y+4)});drawSel();mc.restore()}
  requestAnimationFrame(mapLoop)})();
-map.onclick=e=>{const r=map.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;const h=nodes.find(o=>Math.hypot(o.x-x,o.y-y)<18);if(h){h.n.rev++;h.n.last=Date.now();save();open_(h.n.id)}};
+map.onclick=e=>{const r=map.getBoundingClientRect(),x=e.clientX-r.left-cam.x,y=e.clientY-r.top-cam.y;const h=nodes.find(o=>Math.hypot(o.x-x,o.y-y)<18);if(h){h.n.rev++;h.n.last=Date.now();save();open_(h.n.id)}};
 
 let nid=S.sel||S.notes[0]?.id;
 const note=()=>S.notes.find(n=>n.id==nid);
@@ -364,7 +394,7 @@ function drawOrbit(){ox.clearRect(0,0,320,320);const p=1-tl/total,ang=p*Math.PI*
 function setPhase(b){brk=b;total=tl=(b?+$('#tb').value:+$('#tf').value)*60;theme(b?'gold':(S.pre||'cyan'));$('#tmode').textContent=b?'Solar flare rest protocol. Step away.':'Focus orbit in progress.'}
 $('#tgo').onclick=()=>{if(run){clearInterval(run);run=null;$('#tgo').textContent='Resume';return}
  if(!brk&&tl==total){S.pre=document.body.dataset.theme=='gold'?'cyan':document.body.dataset.theme;setPhase(false)}
- $('#tgo').textContent='Pause';run=setInterval(()=>{tl--;if(tl<=0){beep(1000,.4);if(brk){S.cons=Math.max(0,(S.cons||0)-30)}if(!brk){sessionDone(+$('#tf').value);S.mins+=+$('#tf').value;const d=new Date().toDateString();if(!S.days.includes(d))S.days.push(d);save()}setPhase(!brk)}drawOrbit()},1000)};
+ $('#tgo').textContent='Pause';run=setInterval(()=>{tl--;if(tl<=0){chime(brk?'alarm':'done');if(brk){S.cons=Math.max(0,(S.cons||0)-30)}if(!brk){sessionDone(+$('#tf').value);S.mins+=+$('#tf').value;const d=new Date().toDateString();if(!S.days.includes(d))S.days.push(d);save()}setPhase(!brk)}drawOrbit()},1000)};
 $('#trst').onclick=()=>{clearInterval(run);run=null;$('#tgo').textContent='Start focus';theme(S.pre||S.theme);brk=false;total=tl=+$('#tf').value*60;$('#tmode').textContent='Ready for departure.';drawOrbit()};
 total=tl=1500;drawOrbit();
 
@@ -531,6 +561,56 @@ $('#tf').value=S.tf||25;$('#tb').value=S.tb||5;total=tl=+$('#tf').value*60;drawO
 $('#mvol').value=S.mvol??.7;$('#mvol').addEventListener('input',()=>{S.mvol=+$('#mvol').value;save()});
 addEventListener('pagehide',save);
 navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+if(bc)bc.onmessage=e=>{const k={view:S.view,subj:S.subj,sel:S.sel,split:S.split};rcv=true;Object.keys(S).forEach(x=>delete S[x]);Object.assign(S,e.data,k);rcv=false;fixSubj();nodes=[];const t=document.activeElement&&document.activeElement.tagName;if(t!='TEXTAREA'&&t!='INPUT')go(cur)};
+let cam={x:0,y:0},selId=null;
+function easeCam(){const o=nodes.find(o=>o.n.id==selId);cam.x+=((o?map.width/2-o.x:0)-cam.x)*.12;cam.y+=((o?map.height/2-o.y:0)-cam.y)*.12}
+function drawSel(){const o=nodes.find(o=>o.n.id==selId);if(!o)return;mc.strokeStyle=css('--n3');mc.lineWidth=2;mc.beginPath();mc.arc(o.x,o.y,22+Math.sin(Date.now()/250)*3,0,7);mc.stroke();mc.lineWidth=1}
+addEventListener('keydown',e=>{if(cur!='map'||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||$('#pal').classList.contains('on')||$('#cli').classList.contains('on')||$('#kb').classList.contains('on')||document.body.classList.contains('emg'))return;
+ const D={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+ if(D&&nodes.length){e.preventDefault();let c=nodes.find(o=>o.n.id==selId);if(!c){selId=nodes[0].n.id;return}let best=null,bs=1e9;nodes.forEach(o=>{if(o===c)return;const dx=o.x-c.x,dy=o.y-c.y,d=Math.hypot(dx,dy),dot=(dx*D[0]+dy*D[1])/d;if(dot>.5){const sc=d*(2-dot);if(sc<bs){bs=sc;best=o}}});if(best)selId=best.n.id}
+ else if(e.key=='Enter'&&selId!=null&&e.target.tagName!='BUTTON'){const n=S.notes.find(n=>n.id==selId);if(n){n.rev++;n.last=Date.now();save();open_(n.id)}}});
+addEventListener('keydown',e=>{if(e.key=='?'&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))$('#kb').classList.toggle('on');else if(e.key=='Escape')$('#kb').classList.remove('on')});
+$('#kb').onclick=e=>{if(e.target.id=='kb')$('#kb').classList.remove('on')};
+function chime(k){ac=ac||new AudioContext();ac.resume();(k=='alarm'?[880,660,880,660,880]:[523,659,784,1047]).forEach((f,i)=>{const t=ac.currentTime+i*.14,o=ac.createOscillator(),g=ac.createGain();o.type=k=='alarm'?'square':'sine';o.frequency.value=f;g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.12,t+.02);g.gain.exponentialRampToValueAtTime(.001,t+.35);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+.4)})}
+$('#chm').onclick=()=>{chime('done');setTimeout(()=>chime('alarm'),900)};
+$('#kiosk').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.();
+[['sfn','n'],['sfd','d'],['sft','t']].forEach(q=>{const el=$('#'+q[0]);el.value=SF[q[1]];el.oninput=()=>{SF[q[1]]=+el.value;S.sf=SF;save();if(q[1]=='n')sizeSky()}});
+const LT=[['frac','\\frac{a}{b}'],['∫','\\int_{a}^{b} f(x)\\,dx'],['Σ','\\sum_{i=1}^{n} x_i'],['matrix','\\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix}'],['√','\\sqrt{x}'],['lim','\\lim_{x\\to\\infty}'],['α','\\alpha'],['β','\\beta'],['θ','\\theta'],['λ','\\lambda'],['π','\\pi'],['σ','\\sigma'],['ω','\\omega'],['Δ','\\Delta']];
+$('#ltx').innerHTML=LT.map((b,i)=>`<button class="btn" data-lt="${i}" style="padding:3px 8px">${b[0]}</button>`).join('');
+$('#ltx').onclick=e=>{const b=e.target.closest('[data-lt]');if(!b)return;const t=$('#nbody'),v='$'+LT[b.dataset.lt][1]+'$',a=t.selectionStart;t.value=t.value.slice(0,a)+v+t.value.slice(t.selectionEnd);t.selectionStart=t.selectionEnd=a+v.length;t.focus();t.dispatchEvent(new Event('input'))};
+function tocR(){const n=note();if(!n)return;const hs=[...n.body.matchAll(/^(#{1,3}) (.*)$/gm)];$('#tocl').innerHTML=hs.map((m,i)=>`<div data-th="${i}" style="padding-left:${(m[1].length-1)*10}px;cursor:pointer">${m[2].replace(/</g,'&lt;')}</div>`).join('')||'No headings yet.';const w=n.body.trim().split(/\s+/).filter(Boolean).length;$('#wc').textContent=`${n.body.length} characters, ${w} words, ${Math.max(1,Math.ceil(w/200))} min read`}
+new MutationObserver(tocR).observe($('#prev'),{childList:true});
+$('#tocl').onclick=e=>{const d=e.target.closest('[data-th]');if(d){const h=$$('#prev h1,#prev h2,#prev h3')[+d.dataset.th];if(h)h.scrollIntoView({behavior:'smooth'})}};
+$('#nprint').onclick=()=>window.print();
+function arg(){const a=+$('#z1r').value,b=+$('#z1i').value,c=+$('#z2r').value,d=+$('#z2i').value,op=$('#zop').value,n=Math.max(1,Math.round(+$('#zn').value||3)),x=$('#acv').getContext('2d'),T=(r,i)=>[150+r*30,150-i*30],pol=(r,i)=>`${r.toFixed(3)}${i<0?'-':'+'}${Math.abs(i).toFixed(3)}i  (r=${Math.hypot(r,i).toFixed(3)}, θ=${(Math.atan2(i,r)*180/Math.PI).toFixed(1)}°)`;
+ x.clearRect(0,0,300,300);x.strokeStyle=css('--dim');x.beginPath();x.moveTo(0,150);x.lineTo(300,150);x.moveTo(150,0);x.lineTo(150,300);x.stroke();
+ const vec=(r,i,col)=>{const q=T(r,i);x.strokeStyle=col;x.beginPath();x.moveTo(150,150);x.lineTo(q[0],q[1]);x.stroke();x.fillStyle=col;x.beginPath();x.arc(q[0],q[1],4,0,7);x.fill()};let t='';
+ if(op=='add'){vec(a,b,css('--ac'));vec(c,d,css('--ac2'));vec(a+c,b+d,css('--n3'));t='z1 + z2 = '+pol(a+c,b+d)}
+ else if(op=='mul'){const r=a*c-b*d,i=a*d+b*c;vec(a,b,css('--ac'));vec(c,d,css('--ac2'));vec(r,i,css('--n3'));t='z1 × z2 = '+pol(r,i)+'\nMagnitudes multiply, angles add.'}
+ else{const m=Math.pow(Math.hypot(a,b),1/n),th=Math.atan2(b,a);x.strokeStyle=css('--dim');x.beginPath();x.arc(150,150,m*30,0,7);x.stroke();const L=[];for(let k=0;k<n;k++){const q=(th+2*Math.PI*k)/n;vec(m*Math.cos(q),m*Math.sin(q),css('--n3'));L.push(pol(m*Math.cos(q),m*Math.sin(q)))}t=n+' roots of z1:\n'+L.join('\n')}
+ $('#ao').textContent=t}
+['z1r','z1i','z2r','z2i','zn'].forEach(i=>$('#'+i).oninput=arg);$('#zop').onchange=arg;
+let G={p:[],l:[],c:[],s:null};
+$('#gcv2').onclick=e=>{const r=e.target.getBoundingClientRect(),gx=Math.round(((e.clientX-r.left)*400/r.width-200)/20),gy=Math.round((150-(e.clientY-r.top)*300/r.height)/20);let i=G.p.findIndex(q=>q[0]==gx&&q[1]==gy);if(i<0){G.p.push([gx,gy]);i=G.p.length-1}const m=$('#gmd').value;if(m!='point'){if(G.s==null)G.s=i;else if(G.s!=i){(m=='line'?G.l:G.c).push([G.s,i]);G.s=null}}geoDraw()};
+$('#gclr').onclick=()=>{G={p:[],l:[],c:[],s:null};geoDraw()};
+function geoDraw(){const x=$('#gcv2').getContext('2d'),X=v=>200+v*20,Y=v=>150-v*20;x.clearRect(0,0,400,300);x.strokeStyle='rgba(150,150,200,.18)';for(let i=-10;i<=10;i++){x.beginPath();x.moveTo(X(i),0);x.lineTo(X(i),300);x.stroke()}for(let j=-7;j<=7;j++){x.beginPath();x.moveTo(0,Y(j));x.lineTo(400,Y(j));x.stroke()}
+ x.strokeStyle=css('--ac');G.l.forEach(l=>{const a=G.p[l[0]],b=G.p[l[1]];x.beginPath();x.moveTo(X(a[0]),Y(a[1]));x.lineTo(X(b[0]),Y(b[1]));x.stroke()});G.c.forEach(c=>{const a=G.p[c[0]],b=G.p[c[1]];x.beginPath();x.arc(X(a[0]),Y(a[1]),Math.hypot(a[0]-b[0],a[1]-b[1])*20,0,7);x.stroke()});
+ x.fillStyle=css('--n3');x.font='10px JetBrains Mono';G.p.forEach((q,i)=>{x.beginPath();x.arc(X(q[0]),Y(q[1]),i==G.s?5:3,0,7);x.fill();x.fillText(`(${q[0]},${q[1]})`,X(q[0])+5,Y(q[1])-5)});
+ const t=[],L=G.l.map(l=>[G.p[l[0]],G.p[l[1]]]);L.forEach((l,i)=>{const dx=l[1][0]-l[0][0],dy=l[1][1]-l[0][1];t.push(`Line ${i+1}: slope ${dx?(dy/dx).toFixed(3):'undefined (vertical)'}, midpoint (${(l[0][0]+l[1][0])/2}, ${(l[0][1]+l[1][1])/2}), length ${Math.hypot(dx,dy).toFixed(3)}`)});
+ if(L.length>1){const a=L[L.length-2],b=L[L.length-1],d1=[a[1][0]-a[0][0],a[1][1]-a[0][1]],d2=[b[1][0]-b[0][0],b[1][1]-b[0][1]],den=d1[0]*d2[1]-d1[1]*d2[0];if(Math.abs(den)<1e-9)t.push('The last two lines are parallel.');else{const k=((b[0][0]-a[0][0])*d2[1]-(b[0][1]-a[0][1])*d2[0])/den;t.push(`The last two lines intersect at (${(a[0][0]+k*d1[0]).toFixed(3)}, ${(a[0][1]+k*d1[1]).toFixed(3)})`)}}
+ G.c.forEach((c,i)=>{const a=G.p[c[0]],b=G.p[c[1]],r=Math.hypot(a[0]-b[0],a[1]-b[1]);t.push(`Circle ${i+1}: (x - ${a[0]})² + (y - ${a[1]})² = ${(r*r).toFixed(2)}, radius ${r.toFixed(3)}`)});$('#gio').textContent=t.join('\n')||'Click the grid to place points.'}
+function kep(){const rp=+$('#krp').value,ra=+$('#kra').value;if(rp>0&&ra>0){$('#ka').value=((rp+ra)/2).toFixed(2);$('#ke').value=((ra-rp)/(ra+rp)).toFixed(5)}
+ const a=+$('#ka').value,e=+$('#ke').value,mu=+$('#kmu').value,nu=+$('#knu').value*Math.PI/180;if(!(a>0)||e<0||e>=1||!(mu>0)){$('#ko').textContent='Needs a > 0, 0 ≤ e < 1 and μ > 0.';return}
+ const p=a*(1-e*e),r=p/(1+e*Math.cos(nu)),v=Math.sqrt(mu*(2/r-1/a)),k=Math.sqrt(mu/p),T=2*Math.PI*Math.sqrt(a**3/mu);
+ $('#ko').textContent=`Period ${(T/3600).toFixed(3)} h (${T.toFixed(0)} s)\nPerigee ${(a*(1-e)).toFixed(1)} km, apogee ${(a*(1+e)).toFixed(1)} km\nRadius at ν: ${r.toFixed(1)} km, speed ${v.toFixed(3)} km/s\nPosition (perifocal): (${(r*Math.cos(nu)).toFixed(1)}, ${(r*Math.sin(nu)).toFixed(1)}) km\nVelocity (perifocal): (${(-k*Math.sin(nu)).toFixed(3)}, ${(k*(e+Math.cos(nu))).toFixed(3)}) km/s`}
+['ka','ke','knu','kmu','krp','kra'].forEach(i=>$('#'+i).oninput=kep);
+const LP=29.530588853;
+function lun(){const v=$('#lud').value,d=v?new Date(v+'T12:00:00'):new Date(),age=((((d.getTime()/864e5+2440587.5)-2451550.1)%LP)+LP)%LP,ph=age/LP*2*Math.PI,il=(1-Math.cos(ph))/2,N=['New moon','Waxing crescent','First quarter','Waxing gibbous','Full moon','Waning gibbous','Last quarter','Waning crescent'];
+ const x=$('#mcv2').getContext('2d');x.clearRect(0,0,120,120);x.fillStyle='#1b2236';x.beginPath();x.arc(60,60,50,0,7);x.fill();x.save();if(age>LP/2){x.translate(120,0);x.scale(-1,1)}const q=age>LP/2?2*Math.PI-ph:ph,k=Math.cos(q);x.fillStyle='#f2efe0';x.beginPath();x.arc(60,60,50,-Math.PI/2,Math.PI/2,false);x.ellipse(60,60,Math.max(.01,50*Math.abs(k)),50,0,Math.PI/2,-Math.PI/2,k>0);x.fill();x.restore();
+ $('#luo').textContent=`${N[Math.floor(age/LP*8+.5)%8]}\nAge ${age.toFixed(1)} days\nIlluminated ${(il*100).toFixed(0)}%`;
+ $('#lul').textContent='Upcoming (mean-phase estimate, within about a day):\n'+[[0,'New moon'],[LP/4,'First quarter'],[LP/2,'Full moon'],[3*LP/4,'Last quarter']].map(([t,n])=>{const dd=((t-age)%LP+LP)%LP;return[dd,`${n}: ${new Date(d.getTime()+dd*864e5).toDateString()}`]}).sort((a,b)=>a[0]-b[0]).map(r=>r[1]).join('\n')}
+$('#lud').value=new Date().toISOString().slice(0,10);$('#lud').oninput=lun;
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 const steps=['Powering up the station','Restoring '+S.notes.length+' notes and '+S.cards.length+' cards','Charting the starmap','Calibrating instruments','Ready for departure'];
 let ls=0,ldDone=false;const t0=Date.now();
 const lt=setInterval(()=>{ls=Math.min(ls+1,3);$('#ldt').textContent=steps[ls];$('#ldb').style.width=(ls+1)/5*100+'%'},380);
