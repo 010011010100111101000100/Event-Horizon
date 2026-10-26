@@ -110,6 +110,7 @@ html,body,.shell{height:auto!important;display:block!important}main{overflow:vis
 </style>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/nerdamer.core.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Algebra.js"></script><script defer src="https://cdnjs.cloudflare.com/ajax/libs/nerdamer/1.1.13/Calculus.js"></script>
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#04030f"><link rel="apple-touch-icon" href="icon-192.png">
+<script>window.addEventListener('error',function(){setTimeout(function(){var l=document.getElementById('load');if(l)l.classList.add('out')},1500)});setTimeout(function(){var l=document.getElementById('load');if(l)l.classList.add('out')},10000)</script>
 </head>
 <body data-theme="cyan">
 <div id="load"><div class="orb"><i></i><i></i><i></i></div><h1>Event Horizon</h1><div class="tag mono" id="ldt">Powering up</div><div class="bar" style="width:220px"><div id="ldb"></div></div></div>
@@ -345,7 +346,7 @@ addEventListener('resize',sizeNeb);sizeNeb();
 (function nebLoop(t){nx.globalCompositeOperation='source-over';nx.clearRect(0,0,nb.width,nb.height);nx.globalCompositeOperation='lighter';const cols=[css('--ac'),css('--ac2'),css('--n3')];
 blobs.forEach(b=>{const x=(b.x+Math.sin(t*b.s+b.p)*.14)*nb.width,y=(b.y+Math.cos(t*b.s*1.3+b.p)*.12)*nb.height,r=b.r*Math.max(nb.width,nb.height),g=nx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,cols[b.c]+'4d');g.addColorStop(.5,cols[b.c]+'1f');g.addColorStop(1,cols[b.c]+'00');nx.fillStyle=g;nx.fillRect(0,0,nb.width,nb.height)});requestAnimationFrame(nebLoop)})(0);
 
-const map=$('#map'),mc=map.getContext('2d');let nodes=[];
+const map=$('#map'),mc=map.getContext('2d');let nodes=[];let cam={x:0,y:0},selId=null;
 function sizeMap(){map.width=map.clientWidth;map.height=map.clientHeight}
 addEventListener('resize',()=>{if(cur=='map')sizeMap()});
 function mastery(n){const age=(Date.now()-n.last)/864e5;return Math.max(.15,Math.min(1,(n.rev/8)*Math.exp(-age/30)+.15))}
@@ -562,7 +563,6 @@ $('#mvol').value=S.mvol??.7;$('#mvol').addEventListener('input',()=>{S.mvol=+$('
 addEventListener('pagehide',save);
 navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
 if(bc)bc.onmessage=e=>{const k={view:S.view,subj:S.subj,sel:S.sel,split:S.split};rcv=true;Object.keys(S).forEach(x=>delete S[x]);Object.assign(S,e.data,k);rcv=false;fixSubj();nodes=[];const t=document.activeElement&&document.activeElement.tagName;if(t!='TEXTAREA'&&t!='INPUT')go(cur)};
-let cam={x:0,y:0},selId=null;
 function easeCam(){const o=nodes.find(o=>o.n.id==selId);cam.x+=((o?map.width/2-o.x:0)-cam.x)*.12;cam.y+=((o?map.height/2-o.y:0)-cam.y)*.12}
 function drawSel(){const o=nodes.find(o=>o.n.id==selId);if(!o)return;mc.strokeStyle=css('--n3');mc.lineWidth=2;mc.beginPath();mc.arc(o.x,o.y,22+Math.sin(Date.now()/250)*3,0,7);mc.stroke();mc.lineWidth=1}
 addEventListener('keydown',e=>{if(cur!='map'||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||$('#pal').classList.contains('on')||$('#cli').classList.contains('on')||$('#kb').classList.contains('on')||document.body.classList.contains('emg'))return;
