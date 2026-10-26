@@ -275,9 +275,11 @@ body[data-theme=eclipse]::after{content:"";position:fixed;left:50%;top:50%;width
 </div></section>
 
 <section class="view" id="v-code"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
- <div class="panel"><h2>Python sandbox</h2><textarea id="pyc" rows="9">import math
-print(math.sqrt(2))</textarea><div class="row" style="margin:8px 0"><button class="btn" id="pyr">Run</button><button class="btn" id="pys">Save to vault</button></div><pre class="mono tag" id="pyo" style="white-space:pre-wrap"></pre></div>
- <div class="panel"><h2>Snippet vault</h2><div id="vlt"></div></div>
+ <div class="panel"><h2>Code lab</h2><div class="row"><select id="lang" style="width:auto" aria-label="Language"></select><button class="btn" id="pyr">Run</button><button class="btn" id="pys">Save to vault</button></div><div class="tag" id="linfo" style="margin:6px 0"></div>
+  <textarea id="pyc" rows="12" spellcheck="false"></textarea>
+  <div class="row" style="margin:8px 0"><button class="btn" id="cexp">Export code</button><label class="btn">Import code<input type="file" id="cimp" hidden></label></div>
+  <pre class="mono tag" id="pyo" style="white-space:pre-wrap"></pre><iframe id="pfr" sandbox="allow-scripts" style="display:none;width:100%;height:220px;background:#fff;border:0"></iframe></div>
+ <div class="panel"><h2>Snippet vault</h2><div id="vlt"></div><div class="row" style="margin-top:8px"><button class="btn" id="vexp">Export vault</button><label class="btn">Import vault<input type="file" id="vimp" accept=".json" hidden></label></div></div>
 </div></section>
 
 <section class="view" id="v-cfg"><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">
@@ -332,7 +334,7 @@ print(math.sqrt(2))</textarea><div class="row" style="margin:8px 0"><button clas
 <details><summary>Flashcards</summary><p>Add cards on the right, flip with a click, then grade. The coloured dots show how often you missed each card. Reverse swaps front and back, 5 s lightning flips cards for you, the interval slider scales review gaps, and the ring shows how many cards are mastered. Cards accept Markdown. Export and import decks as JSON.</p></details>
 <details><summary>Timer, ranks and status</summary><p>The Focus timer runs focus and break cycles with a warp sound, optional notifications and a reflection prompt. Zenith lockout stops you leaving the timer. Station status shows distance travelled, hull integrity, solar flare bonus, colonisation, trophies, and a weekly report you can copy, share or download as an image.</p></details>
 <details><summary>Maths and science tools</summary><p>Calculator, Math engine (calculus, matrices, grapher, errors), Geometry &amp; orbits (Argand, sketchpad, Kepler, Moon), Astro tools (H-R diagram, spectra, relativity, field of view, coordinates), Orbital lab, Physics lab (seven simulations with sliders) and Sky lab (transit curve, meteor radiants, solar system scale, spectral quiz).</p></details>
-<details><summary>Dev bench and Code lab</summary><p>Dev bench has a JavaScript console (runs in a worker), HTML preview, regex tester, Markdown table builder, JSON tree, colour converter, Base64 and a note link checker. Code lab runs Python and keeps a snippet vault.</p></details>
+<details><summary>Dev bench and Code lab</summary><p>Dev bench has a JavaScript console (runs in a worker), HTML preview, regex tester, Markdown table builder, JSON tree, colour converter, Base64 and a note link checker. Code lab lets you pick from 14 languages. JavaScript, Python, Lua, SQL, Brainfuck and HTML run inside your browser (Lua, SQL and Python download a runtime the first time). C, C++, Java, Rust, Go, Ruby, PHP and TypeScript run through an online service when it is reachable. Export code saves the editor as a file with the right extension, Import code loads a file and picks the language from its extension, and the vault can be exported and imported as JSON.</p></details>
 <details><summary>Sound</summary><p>Music makes endless ambient audio. Station config holds the Audio lab: planet soundscapes, noise filters, binaural sweep, chime designer and Morse. Mute silences everything. The small bars next to it show the sound.</p></details>
 <details><summary>Look and system</summary><p>Station config changes blur, glow, font, themes, background image, aurora, minimalist view, kiosk mode and the starfield. Supernova alert turns the header red when a deadline is within 3 days. The site installs as an app and works offline.</p></details>
 <details><summary>Saving and backups</summary><p>Everything saves automatically in this browser and syncs between open tabs. Export station JSON for a backup file, and import it on another device. The site reminds you monthly. Factory reset erases everything.</p></details>
@@ -574,11 +576,6 @@ function lag(){const u=+$('#lmu').value,x=$('#lcv').getContext('2d'),P=[['L1',rt
 $('#lmu').oninput=lag;
 function dvc(){const i=+$('#dis').value,a=+$('#dm0').value,b=+$('#dmf').value;$('#dvo').textContent=`Mass ratio ${(a/b).toFixed(2)}, delta-v ${(i*9.80665*Math.log(a/b)).toFixed(0)} m/s`}['dis','dm0','dmf'].forEach(i=>$('#'+i).oninput=dvc);
 function dop(){const b=+$('#db').value,l=550*Math.sqrt((1+b)/(1-b)),h=Math.max(0,Math.min(300,270-(l-380)/320*270));$('#dsw').style.background=`hsl(${h},90%,50%)`;$('#dvt').textContent=`${b>0?'Receding':b<0?'Approaching':'At rest'} at ${Math.abs(b)}c: 550 nm light is seen at ${l.toFixed(0)} nm${l<380?' (ultraviolet)':l>700?' (infrared)':''}.`}$('#db').oninput=dop;
-let py;$('#pyr').onclick=async()=>{$('#pyo').textContent='Loading Python. The first run downloads about 10 MB.';try{if(!py){await new Promise((r,j)=>{const t=document.createElement('script');t.src='https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js';t.onload=r;t.onerror=j;document.head.appendChild(t)});py=await loadPyodide()}let o='';py.setStdout({batched:t=>o+=t+'\n'});const r=await py.runPythonAsync($('#pyc').value);$('#pyo').textContent=o+(r!==undefined?String(r):'')}catch(e){$('#pyo').textContent=String(e)}};
-S.snips=S.snips||[];
-function vaultR(){$('#vlt').innerHTML=S.snips.map((v,i)=>`<div><button class="btn" data-ld="${i}" style="padding:2px 8px">${v.t}</button> <button class="btn" data-rm="${i}" style="padding:2px 8px">Delete</button></div>`).join('')||'<div class="tag">No snippets saved yet.</div>'}
-$('#pys').onclick=()=>{const t=prompt('Snippet name');if(t){S.snips.push({t,c:$('#pyc').value});save();vaultR()}};
-$('#vlt').onclick=e=>{const l=e.target.closest('[data-ld]'),r=e.target.closest('[data-rm]');if(l)$('#pyc').value=S.snips[+l.dataset.ld].c;if(r){S.snips.splice(+r.dataset.rm,1);save();vaultR()}};
 const CMD=l=>{const a=l.match(/"[^"]*"|\S+/g)||[],c=a[0],g=a.slice(1).map(x=>x.replace(/"/g,''));
  if(c=='orbit'&&g[0]=='focus'){$('#tf').value=+g[1]||25;go('timer');$('#trst').click();$('#tgo').click();return`Focus orbit of ${+g[1]||25} min engaged.`}
  if(c=='node'&&g[0]=='create'){S.notes.push({id:S.nid,title:g[1]||'Untitled',tags:'',body:'',rev:0,last:Date.now()});nid=S.nid++;save();nodes=[];return'Node created.'}
@@ -790,7 +787,7 @@ $('#dtabs').innerHTML=[['js','JS console'],['html','HTML preview'],['re','Regex'
 $('#dtabs').onclick=e=>{const b=e.target.closest('[data-dt]');if(b){dt=b.dataset.dt;$('#din').value=DEF[dt];devSet()}};
 $('#din').oninput=()=>devRun();$('#dpat').oninput=()=>devRun();
 function devSet(){if(!$('#din').value)$('#din').value=DEF[dt];$('#dpat').style.display=dt=='re'?'block':'none';$('#dfr').style.display=dt=='html'?'block':'none';$('#dout').style.display=dt=='html'?'none':'block';devRun()}
-function runJS(code){const o=$('#dout');try{const w=new Worker(URL.createObjectURL(new Blob(["onmessage=e=>{const L=[],c={log:(...a)=>L.push(a.map(x=>typeof x=='object'?JSON.stringify(x):String(x)).join(' '))};let r;try{r=new Function('console','code','return eval(code)')(c,e.data)}catch(x){r='Error: '+x.message}postMessage(L.join('\\n')+(r!==undefined?'\\n= '+(typeof r=='object'?JSON.stringify(r):r):''))}"],{type:'text/javascript'})));const t=setTimeout(()=>{w.terminate();o.textContent='Stopped after 3 seconds.'},3000);w.onmessage=e=>{clearTimeout(t);o.textContent=e.data;w.terminate()};w.postMessage(code)}catch(e){o.textContent='Workers are not available here.'}}
+function runJS(code){const o=$('#dout'),id=runJS.n=(runJS.n||0)+1;try{const w=new Worker(URL.createObjectURL(new Blob(["onmessage=e=>{const L=[],c={log:(...a)=>{L.push(a.map(x=>typeof x=='object'?JSON.stringify(x):String(x)).join(' '))}};let r;try{r=new Function('console','code','return eval(code)')(c,e.data)}catch(x){r='Error: '+x.message}postMessage(L.join('\\n')+(r!==undefined?'\\n= '+(typeof r=='object'?JSON.stringify(r):r):''))}"],{type:'text/javascript'})));const t=setTimeout(()=>{w.terminate();o.textContent='Stopped after 3 seconds.'},3000);w.onmessage=e=>{clearTimeout(t);if(id===runJS.n)o.textContent=e.data;w.terminate()};w.postMessage(code)}catch(e){o.textContent='Workers are not available here.'}}
 function devRun(){const v=$('#din').value,o=$('#dout');try{
  if(dt=='js')runJS(v);
  else if(dt=='html')$('#dfr').srcdoc=v;
@@ -801,6 +798,53 @@ function devRun(){const v=$('#din').value,o=$('#dout');try{
  else if(dt=='b64'){let d;try{d=decodeURIComponent(escape(atob(v.trim())))}catch(e){d='(not valid Base64)'}o.textContent='Encoded:\n'+btoa(unescape(encodeURIComponent(v)))+'\n\nDecoded:\n'+d}
  else if(dt=='lnk'){const t=S.notes.map(n=>n.title.toLowerCase()),bad=[];S.notes.forEach(n=>[...n.body.matchAll(/\[\[([^\]]+)\]\]/g)].forEach(m=>{if(!t.includes(m[1].toLowerCase()))bad.push(`${n.title} -> [[${m[1]}]]`)}));o.textContent=bad.length?'Broken links:\n'+bad.join('\n'):'All note links resolve.'}
  }catch(e){o.textContent='Check the input.'}}
+const LANGS={
+js:{n:'JavaScript',e:'js',r:'local',s:'console.log([1,2,3].map(x=>x*x));'},
+py:{n:'Python',e:'py',r:'local',s:'import math\nprint(math.sqrt(2))'},
+lua:{n:'Lua',e:'lua',r:'local',s:'for i=1,3 do print(i*i) end'},
+sql:{n:'SQL (SQLite)',e:'sql',r:'local',s:'CREATE TABLE t(a,b);\nINSERT INTO t VALUES(1,2),(3,4);\nSELECT * FROM t;'},
+bf:{n:'Brainfuck',e:'bf',r:'local',s:'++++++++[>++++++++<-]>+.'},
+html:{n:'HTML / CSS / JS preview',e:'html',r:'local',s:'<h1 style="color:teal">Hello</h1>'},
+c:{n:'C',e:'c',r:'online',pi:'c',s:'#include <stdio.h>\nint main(){printf("Hello\\n");return 0;}'},
+cpp:{n:'C++',e:'cpp',r:'online',pi:'c++',s:'#include <iostream>\nint main(){std::cout<<"Hello\\n";}'},
+java:{n:'Java',e:'java',r:'online',pi:'java',s:'public class Main{public static void main(String[] a){System.out.println("Hello");}}'},
+rs:{n:'Rust',e:'rs',r:'online',pi:'rust',s:'fn main(){println!("Hello");}'},
+go:{n:'Go',e:'go',r:'online',pi:'go',s:'package main\nimport "fmt"\nfunc main(){fmt.Println("Hello")}'},
+rb:{n:'Ruby',e:'rb',r:'online',pi:'ruby',s:'puts "Hello"'},
+php:{n:'PHP',e:'php',r:'online',pi:'php',s:'<?php\necho "Hello\\n";'},
+ts:{n:'TypeScript',e:'ts',r:'online',pi:'typescript',s:'const x: number = 6*7;\nconsole.log(x);'}};
+const EXT={};Object.keys(LANGS).forEach(k=>EXT[LANGS[k].e]=k);EXT.mjs='js';EXT.htm='html';EXT.h='c';EXT.hpp='cpp';EXT.cc='cpp';EXT.txt='py';
+$('#lang').innerHTML=Object.keys(LANGS).map(k=>`<option value="${k}">${LANGS[k].n}${LANGS[k].r=='online'?' (online runner)':''}</option>`).join('');
+let py,prevL=S.lang&&LANGS[S.lang]?S.lang:'py';
+$('#lang').value=prevL;$('#pyc').value=S.code!=null?S.code:LANGS[prevL].s;
+function linfo(){const L=LANGS[$('#lang').value];$('#linfo').textContent=L.r=='local'?'Runs inside your browser.':'Runs on an online service (Piston). Needs an internet connection and may be unavailable.';$('#pfr').style.display=$('#lang').value=='html'?'block':'none';$('#pyo').style.display=$('#lang').value=='html'?'none':'block'}
+linfo();
+$('#lang').onchange=()=>{const k=$('#lang').value,t=$('#pyc');if(!t.value.trim()||t.value==LANGS[prevL].s)t.value=LANGS[k].s;prevL=k;S.lang=k;S.code=t.value;save();linfo()};
+let cT;$('#pyc').addEventListener('input',()=>{clearTimeout(cT);cT=setTimeout(()=>{S.code=$('#pyc').value;save()},600)});
+const loadJS=u=>new Promise((r,j)=>{if(document.querySelector(`script[src="${u}"]`))return r();const t=document.createElement('script');t.src=u;t.onload=r;t.onerror=()=>j(new Error('Could not download the runtime. Check your internet connection.'));document.head.appendChild(t)});
+const WSRC="onmessage=e=>{const L=[],c={log:(...a)=>{L.push(a.map(x=>typeof x=='object'?JSON.stringify(x):String(x)).join(' '))}};let r;try{r=new Function('console','code','return eval(code)')(c,e.data)}catch(x){r='Error: '+x.message}postMessage(L.join('\\n')+(r!==undefined?'\\n= '+(typeof r=='object'?JSON.stringify(r):r):''))}";
+const jsRun=code=>new Promise(res=>{try{const w=new Worker(URL.createObjectURL(new Blob([WSRC])));const t=setTimeout(()=>{w.terminate();res('Stopped after 3 seconds.')},3000);w.onmessage=e=>{clearTimeout(t);w.terminate();res(e.data)};w.postMessage(code)}catch(e){res('Workers are not available here.')}});
+function bfRun(c){const m=new Uint8Array(30000),j={},st=[];let p=0,o='',n=0;for(let i=0;i<c.length;i++){if(c[i]=='[')st.push(i);if(c[i]==']'){const a=st.pop();if(a==null)throw new Error('Unmatched ]');j[a]=i;j[i]=a}}if(st.length)throw new Error('Unmatched [');
+ for(let i=0;i<c.length;i++){if(++n>5e6)throw new Error('Stopped: too many steps.');switch(c[i]){case'>':p=(p+1)%30000;break;case'<':p=(p+29999)%30000;break;case'+':m[p]++;break;case'-':m[p]--;break;case'.':o+=String.fromCharCode(m[p]);break;case'[':if(!m[p])i=j[i];break;case']':if(m[p])i=j[i]}}return o||'(no output)'}
+async function runCode(){const l=$('#lang').value,L=LANGS[l],code=$('#pyc').value,o=$('#pyo');o.textContent='Running...';
+ try{
+  if(l=='js')o.textContent=await jsRun(code);
+  else if(l=='py'){o.textContent='Loading Python. The first run downloads about 10 MB.';if(!py){await loadJS('https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js');py=await loadPyodide()}let out='';py.setStdout({batched:t=>out+=t+'\n'});const r=await py.runPythonAsync(code);o.textContent=out+(r!==undefined?String(r):'')||'(no output)'}
+  else if(l=='lua'){await loadJS('https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.js');let out='';const old=console.log;console.log=(...a)=>{out+=a.join(' ')+'\n'};try{fengari.load(code)()}finally{console.log=old}o.textContent=out||'(no output)'}
+  else if(l=='sql'){await loadJS('https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js');const SQL=await initSqlJs({locateFile:f=>'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/'+f}),db=new SQL.Database();try{const r=db.exec(code);o.textContent=r.map(t=>[t.columns.join(' | '),...t.values.map(v=>v.join(' | '))].join('\n')).join('\n\n')||'Done. No rows returned.'}finally{db.close()}}
+  else if(l=='bf')o.textContent=bfRun(code);
+  else if(l=='html'){$('#pfr').srcdoc=code}
+  else{const r=await fetch('https://emkc.org/api/v2/piston/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({language:L.pi,version:'*',files:[{name:'main.'+L.e,content:code}]})}),d=await r.json();if(!r.ok||!d.run)throw new Error(d.message||'The online runner refused the request.');o.textContent=((d.compile&&d.compile.output)?d.compile.output+'\n':'')+(d.run.output||'(no output)')}
+ }catch(e){o.textContent='Error: '+(e.message||e)+(L.r=='online'?'\n\nThis language needs the online Piston service, which may be down, blocked or need a key. Your code is still saved and can be exported.':'')}}
+$('#pyr').onclick=runCode;
+$('#cexp').onclick=()=>{const L=LANGS[$('#lang').value],a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#pyc').value],{type:'text/plain'}));a.download=(L.e=='java'?'Main':'code')+'.'+L.e;a.click()};
+$('#cimp').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const x=f.name.split('.').pop().toLowerCase(),k=EXT[x]||$('#lang').value;$('#lang').value=k;prevL=k;$('#pyc').value=t;S.lang=k;S.code=t;save();linfo();toast('Imported '+f.name+' as '+LANGS[k].n+'.')});e.target.value=''};
+S.snips=S.snips||[];
+function vaultR(){$('#vlt').innerHTML=S.snips.map((v,i)=>`<div><button class="btn" data-ld="${i}" style="padding:2px 8px">[${LANGS[v.l]?LANGS[v.l].e:'py'}] ${String(v.t).replace(/</g,'&lt;')}</button> <button class="btn" data-rm="${i}" style="padding:2px 8px">Delete</button></div>`).join('')||'<div class="tag">No snippets saved yet.</div>'}
+$('#pys').onclick=()=>{const t=prompt('Snippet name');if(t){S.snips.push({t,c:$('#pyc').value,l:$('#lang').value});save();vaultR()}};
+$('#vlt').onclick=e=>{const l=e.target.closest('[data-ld]'),r=e.target.closest('[data-rm]');if(l){const v=S.snips[+l.dataset.ld],k=LANGS[v.l]?v.l:'py';$('#lang').value=k;prevL=k;$('#pyc').value=v.c;S.lang=k;S.code=v.c;save();linfo()}if(r){S.snips.splice(+r.dataset.rm,1);save();vaultR()}};
+$('#vexp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S.snips,null,1)],{type:'application/json'}));a.download='snippet-vault.json';a.click()};
+$('#vimp').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!Array.isArray(d))throw 0;d.forEach(v=>v&&v.t&&typeof v.c=='string'&&S.snips.push({t:String(v.t),c:v.c,l:LANGS[v.l]?v.l:'py'}));save();vaultR();toast('Vault imported.')}catch(x){toast('That file is not a snippet vault.')}});e.target.value=''};
 const steps=['Powering up the station','Restoring '+S.notes.length+' notes and '+S.cards.length+' cards','Charting the starmap','Calibrating instruments','Ready for departure'];
 let ls=0,ldDone=false;const t0=Date.now();
 const lt=setInterval(()=>{ls=Math.min(ls+1,3);$('#ldt').textContent=steps[ls];$('#ldb').style.width=(ls+1)/5*100+'%'},380);
